@@ -10,12 +10,12 @@ export default defineSchema({
     // Basic user information
     name: v.string(),
     email: v.string(),
+    avatarUrl: v.optional(v.string()), // Profile picture from Clerk
 
     // User role/type
     userType: v.union(
       v.literal("user"),
       v.literal("patient"),
-      v.literal("provider"),
       v.literal("admin")
     ),
 
