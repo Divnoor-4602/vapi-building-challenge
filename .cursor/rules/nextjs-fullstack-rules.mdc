@@ -1,0 +1,409 @@
+---
+description: 
+globs: **/*.ts,**/*.tsx,**/*.jsx,**/*.js
+alwaysApply: false
+---
+# Next.js 15 App Router Full-Stack Guidelines
+
+> **Tech Stack**  
+> Next.js 15 (App Router) • React 19 • TypeScript • Tailwind CSS • Shadcn UI / Radix UI • Framer-Motion • Zustand • React-Hook-Form • Zod • Clerk • Convex • googleapis • Resend  
+
+## Documentation Links
+
+| Library                     | Link Placeholder |
+|-----------------------------|------------------|
+| Zustand                     | https://zustand.docs.pmnd.rs/getting-started/introduction |
+| Zod                         | https://zod.dev/ |
+| React-Hook-Form             | https://react-hook-form.com/get-started |
+| Shadcn UI / Radix UI        | https://ui.shadcn.com/docs/installation |
+| Clerk                       | https://clerk.com/docs |
+| googleapis                  | https://developers.google.com/workspace/calendar/api/guides/overview |
+| Resend                      | https://resend.com/docs/send-with-nextjs |
+
+---
+
+### Pinecone Vector Search Integration
+When implementing vector search with Pinecone, focus on efficient indexing strategies, proper metadata handling, and optimized query patterns. Implement semantic search capabilities with proper error handling and fallback mechanisms for vector operations.
+
+## Core Principles
+
+### Code Style and Structure
+- Write concise, technical TypeScript code with accurate examples
+- Use functional and declarative programming patterns; avoid classes
+- Favor iteration and modularization over code duplication
+- Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`, `canSubmit`)
+- Structure files: exported component, subcomponents, helpers, static content, types
+- Use lowercase with dashes for directory names (e.g., `components/auth-wizard`)
+- Favor named exports for components
+- Use the Receive an Object, Return an Object (RORO) pattern
+
+### File and Directory Structure
+```
+src/
+├── app/                 # Next.js App Router
+├── components/          # Reusable UI components
+│   ├── ui/             # Shadcn UI components
+│   └── forms/          # Form components
+├── lib/                # Utility functions and configurations
+├── hooks/              # Custom React hooks
+├── stores/             # Zustand stores
+├── types/              # TypeScript type definitions
+├── utils/              # Helper functions
+└── constants/          # Application constants
+```
+
+## JavaScript/TypeScript Guidelines
+
+### Syntax and Conventions
+- Use "function" keyword for pure functions; omit semicolons
+- Use TypeScript for all code; prefer interfaces over types; avoid enums, use maps
+- Avoid unnecessary curly braces in conditional statements
+- Use concise, one-line syntax for simple conditionals: `if (condition) doSomething()`
+- File structure: Exported component, subcomponents, helpers, static content, types
+
+### Error Handling and Validation
+- Prioritize error handling and edge cases at function start
+- Use early returns for error conditions to avoid deeply nested statements
+- Place the happy path last in functions for improved readability
+- Avoid unnecessary else statements; use if-return pattern
+- Use guard clauses for preconditions and invalid states
+- Implement proper error logging and user-friendly error messages
+- Use custom error types for consistent error handling
+
+## React/Next.js Best Practices
+
+### Component Development
+- Use functional components with TypeScript interfaces
+- Use declarative JSX patterns
+- Use `function` keyword, not `const`, for components
+- Place static content and interfaces at file end
+- Use content variables for static content outside render functions
+- Break down components into smaller parts with minimal props
+- Use composition to build complex components
+
+### Server and Client Components
+- **Minimize 'use client' usage**: Prefer React Server Components (RSC)
+- Use 'use client' only for:
+  - Web API access in small components
+  - Interactive components requiring event handlers
+  - Components using browser-specific APIs
+- **Avoid 'use client' for**:
+  - Data fetching (use RSC instead)
+  - State management (prefer server state when possible)
+  - Pure presentation components
+
+### Data Fetching Patterns
+- Use React Server Components for initial data fetching
+- Implement the preload pattern to prevent waterfalls
+- Model expected errors as return values in Server Actions
+- Use error boundaries for unexpected errors with `error.tsx` and `global-error.tsx`
+- Code in `services/` directory should throw user-friendly errors
+
+### Performance Optimization
+- Minimize `useEffect` and `setState` usage
+- Implement dynamic imports for code splitting
+- Use responsive design with mobile-first approach
+- Optimize images: WebP format, size data, lazy loading
+- Wrap client components in Suspense with fallback
+- Use dynamic loading for non-critical components
+- Prioritize Web Vitals (LCP, CLS, FID)
+
+## State Management with Zustand
+
+### Store Structure
+```typescript
+interface AppState {
+  // State properties
+  user: User | null
+  isLoading: boolean
+  
+  // Actions
+  setUser: (user: User | null) => void
+  setLoading: (loading: boolean) => void
+}
+
+export const useAppStore = create<AppState>((set) => ({
+  user: null,
+  isLoading: false,
+  setUser: (user) => set({ user }),
+  setLoading: (isLoading) => set({ isLoading }),
+}))
+```
+
+### Best Practices
+- Keep stores focused and single-purpose
+- Use selectors to prevent unnecessary re-renders
+- Implement middleware for persistence when needed
+- Use immer for complex state updates
+- Separate actions from state properties
+
+## Form Handling with React Hook Form + Zod
+
+### Form Setup Pattern
+```typescript
+const formSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+})
+
+type FormData = z.infer<typeof formSchema>
+
+function MyForm() {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
+
+  const onSubmit = async (data: FormData) => {
+    // Handle form submission
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        {/* Form fields */}
+      </form>
+    </Form>
+  )
+}
+```
+
+### Validation Best Practices
+- Define schemas at the top level for reusability
+- Use Zod for both client and server-side validation
+- Implement proper error messages and field validation
+- Use `useActionState` with react-hook-form for server actions
+- Handle loading and error states appropriately
+
+## UI/UX with Shadcn UI and Styling
+
+### Component Usage
+- Use Shadcn UI components as the foundation
+- Customize with Tailwind CSS utility classes
+- Implement consistent design patterns
+- Use Radix UI primitives through Shadcn components
+- Leverage Framer Motion for animations
+
+### Styling Guidelines
+- Follow mobile-first responsive design
+- Use Tailwind CSS utility-first approach
+- Implement proper color contrast for accessibility
+- Use consistent spacing and typography scales
+- Create reusable style variants with CVA (Class Variance Authority)
+
+### Animation with Framer Motion
+- Use subtle animations to enhance UX
+- Implement page transitions and micro-interactions
+- Optimize animations for performance
+- Provide reduced motion alternatives
+
+## Authentication with Clerk
+
+### Implementation Patterns
+- Use Clerk's Next.js integration
+- Implement proper route protection
+- Handle authentication state in components
+- Use Clerk's hooks for user management
+- Implement proper loading and error states
+
+## Backend Integration
+
+### Convex Integration
+- Use Convex React hooks for real-time data
+- Implement proper query and mutation patterns
+- Handle optimistic updates appropriately
+- Use Convex for serverless functions
+
+### API Integration
+- Use type-safe API calls with proper error handling
+- Implement proper loading states
+- Handle network errors gracefully
+- Use React Query or SWR for client-side caching when needed
+
+## Testing and Quality Assurance
+
+### Testing Strategy
+- Write unit tests for utility functions and hooks
+- Use integration tests for complex components
+- Implement end-to-end tests for critical user flows
+- Test form validation and error handling
+
+### Code Quality
+- Use ESLint and Prettier for code formatting
+- Implement TypeScript strict mode
+- Use JSDoc comments for complex functions
+- Maintain consistent code organization
+
+## Security Best Practices
+
+### Input Validation and Sanitization
+- **Always validate inputs**: Use Zod schemas for both client and server-side validation
+- **Sanitize user inputs**: Escape HTML, prevent XSS attacks
+- **Implement CSRF protection**: Use Next.js built-in CSRF protection
+- **File upload security**: Validate file types, sizes, and scan for malware
+```typescript
+const userInputSchema = z.object({
+  email: z.string().email().max(255),
+  content: z.string().max(1000).refine(
+    (val) => !/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(val),
+    { message: "Script tags not allowed" }
+  ),
+})
+```
+
+### Authentication and Authorization
+- **Use Clerk's security features**: Implement proper session management
+- **Role-based access control**: Define user roles and permissions clearly
+- **JWT token validation**: Always verify tokens server-side
+- **Multi-factor authentication**: Encourage or enforce MFA
+- **Session management**: Implement proper session timeout and renewal
+
+### Data Protection
+- **Environment variables**: Never expose secrets in client-side code
+- **Encryption at rest**: Encrypt sensitive data in databases
+- **Encryption in transit**: Always use HTTPS/TLS
+- **API key management**: Rotate keys regularly, use different keys per environment
+- **Database security**: Implement proper access controls and query parameterization
+```typescript
+// Proper environment variable usage
+const apiKey = process.env.PINECONE_API_KEY // Server-side only
+if (!apiKey) throw new Error('Missing required API key')
+```
+
+### HTTP Security Headers
+- **Content Security Policy (CSP)**: Prevent XSS attacks
+- **CORS configuration**: Restrict cross-origin requests appropriately
+- **Security headers**: Implement HSTS, X-Frame-Options, X-Content-Type-Options
+```typescript
+// next.config.js
+const securityHeaders = [
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+  {
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin',
+  },
+  {
+    key: 'Content-Security-Policy',
+    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline';",
+  },
+]
+```
+
+### API Security
+- **Rate limiting**: Implement per-user and per-IP rate limits
+- **Request size limits**: Prevent DoS attacks with large payloads
+- **API versioning**: Maintain backwards compatibility securely
+- **Logging and monitoring**: Log security events and monitor for anomalies
+- **Input validation**: Validate all API parameters and body content
+
+### Third-Party Integration Security
+- **Vendor assessment**: Regularly audit third-party dependencies
+- **Principle of least privilege**: Grant minimal necessary permissions
+- **Webhook validation**: Verify webhook signatures (Clerk, Resend, etc.)
+- **API integration**: Use OAuth 2.0 for Google APIs, validate all responses
+
+## Development Best Practices
+
+### Code Organization and Architecture
+- **Separation of concerns**: Keep business logic separate from UI components
+- **Single responsibility principle**: Each function/component should have one clear purpose
+- **DRY principle**: Don't repeat code; create reusable utilities and components
+- **SOLID principles**: Follow object-oriented design principles in TypeScript
+- **Clean architecture**: Implement proper layering (presentation, business, data)
+
+### Version Control and Collaboration
+- **Git workflow**: Use feature branches, meaningful commit messages
+- **Code reviews**: Mandatory peer reviews before merging
+- **Branch protection**: Require PR reviews and status checks
+- **Semantic versioning**: Use conventional commit messages
+- **Documentation**: Keep README, API docs, and inline comments updated
+
+### Testing Strategy
+- **Test pyramid**: Unit tests (70%), integration tests (20%), E2E tests (10%)
+- **Test-driven development**: Write tests before implementation when appropriate
+- **Coverage targets**: Maintain >80% code coverage for critical paths
+- **Testing types**:
+  - Unit tests: Functions, hooks, utilities
+  - Integration tests: Component interactions, API endpoints
+  - E2E tests: Critical user journeys
+  - Security tests: Input validation, authentication flows
+
+### Environment Management
+- **Environment separation**: Dev, staging, production with different configurations
+- **Configuration management**: Use environment-specific variables
+- **Secrets management**: Never commit secrets, use secure vaults
+- **Database migrations**: Version-controlled schema changes
+- **Feature flags**: Implement toggles for gradual rollouts
+
+### Monitoring and Observability
+- **Error tracking**: Implement comprehensive error logging (Sentry, LogRocket)
+- **Performance monitoring**: Track Web Vitals, API response times
+- **Security monitoring**: Log authentication events, failed requests
+- **Health checks**: Implement endpoint monitoring
+- **Analytics**: Track user behavior and application usage
+
+### CI/CD Pipeline
+- **Automated testing**: Run all tests on every PR
+- **Static analysis**: ESLint, TypeScript checks, security scans
+- **Build optimization**: Automated bundle analysis and optimization
+- **Deployment automation**: Zero-downtime deployments
+- **Rollback strategy**: Quick rollback capabilities for production issues
+
+### Code Quality Standards
+- **Linting rules**: Strict ESLint configuration with security rules
+- **Type safety**: Enable TypeScript strict mode
+- **Code formatting**: Prettier with consistent configuration
+- **Import organization**: Organize imports with eslint-plugin-import
+- **Naming conventions**: Clear, descriptive names following established patterns
+
+### Documentation Standards
+- **API documentation**: OpenAPI/Swagger for all endpoints
+- **Component documentation**: Storybook for UI components
+- **Architecture docs**: High-level system design documentation
+- **Setup guides**: Clear onboarding documentation for new developers
+- **Decision records**: Document architectural decisions and rationale
+
+### Performance Optimization
+- **Bundle analysis**: Regular analysis of JavaScript bundle sizes
+- **Image optimization**: Automated WebP conversion and lazy loading
+- **Caching strategies**: Implement appropriate caching at all levels
+- **Database optimization**: Query optimization and indexing
+- **CDN usage**: Leverage CDN for static assets and API responses
+- **Code splitting**: Implement route-based and component-based splitting
+
+
+## Accessibility
+
+### Implementation Guidelines
+- Ensure keyboard navigation support
+- Implement proper ARIA labels and roles
+- Maintain color contrast ratios (WCAG standards)
+- Test with screen readers
+- Provide alternative text for images
+
+## Development Workflow
+
+### Process Methodology
+1. **Deep Dive Analysis**: Thoroughly analyze requirements and constraints
+2. **Planning**: Develop clear architectural structure using `<PLANNING>` tags
+3. **Implementation**: Build step-by-step following best practices
+4. **Review and Optimize**: Perform code review and optimization
+5. **Finalization**: Ensure security, performance, and requirement compliance
+
+### System 2 Thinking
+- Break down problems into manageable parts
+- Consider multiple solution paths
+- Evaluate consequences and trade-offs
+- Iterate through improvements before finalizing
+
+Remember: Focus on creating maintainable, performant, and accessible applications that follow modern React and Next.js patterns while leveraging the full power of the specified tech stack, ensure that the code is readible.
