@@ -1,0 +1,1 @@
+export { handleGetPrescription } from "./getPrescription";
