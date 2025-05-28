@@ -22,6 +22,8 @@ alwaysApply: false
 
 ---
 
+### NOTE: NEVER APPLY CHANGES DIRECTLY TO THE CODE FILES, PROVIDE THEM IN THE CHAT AND ASK IF I'D LIKE YOU TO APPLY THEM
+
 ### Pinecone Vector Search Integration
 When implementing vector search with Pinecone, focus on efficient indexing strategies, proper metadata handling, and optimized query patterns. Implement semantic search capabilities with proper error handling and fallback mechanisms for vector operations.
 

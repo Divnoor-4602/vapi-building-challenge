@@ -9,8 +9,17 @@ export const current = query({
     v.object({
       _id: v.id("users"),
       _creationTime: v.number(),
-      name: v.string(),
+      lastLoginAt: v.optional(v.number()),
       clerkId: v.string(),
+      name: v.string(),
+      email: v.string(),
+      avatarUrl: v.optional(v.string()),
+      userType: v.union(
+        v.literal("user"),
+        v.literal("patient"),
+        v.literal("admin")
+      ),
+      isActive: v.boolean(),
     })
   ),
   handler: async (ctx) => {
@@ -26,6 +35,7 @@ export const upsertFromClerk = internalMutation({
       name: `${data.first_name} ${data.last_name}`,
       clerkId: data.id,
       email: data.email_addresses[0].email_address,
+      avatarUrl: data.image_url || undefined,
       userType: "user" as const,
       isActive: true,
     };

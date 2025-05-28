@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -27,18 +26,20 @@ export function DashboardSidebar({ type, ...props }: SidebarProps) {
 
   return (
     <Sidebar collapsible="icon" {...props} variant="inset">
+      {/* Header Section: Brand identity and logo */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size={"lg"} asChild>
-              <Link href={"/"}>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/">
                 <div className="flex">
-                  {/* logo */}
-                  <div className="flex items-start flex-col">
-                    <div className="text-sm font-heading truncate font-semibold">
+                  <div className="flex flex-col items-start">
+                    {/* Primary brand name */}
+                    <div className="truncate font-heading text-sm font-semibold">
                       Nightingale
                     </div>
-                    <div className="text-xs font-heading truncate">
+                    {/* Secondary subtitle */}
+                    <div className="truncate font-heading text-xs text-muted-foreground">
                       Vapi Building Challenge
                     </div>
                   </div>
@@ -48,7 +49,8 @@ export function DashboardSidebar({ type, ...props }: SidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      {/* Sidebar content */}
+
+      {/* Main Content: Navigation menu */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -61,8 +63,10 @@ export function DashboardSidebar({ type, ...props }: SidebarProps) {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
                     <Link href={item.url}>
-                      <item.icon className="h-2 w-2" />
-                      <span className="text-xs font-body truncate font-medium">
+                      {/* Navigation icon - proper size for visibility */}
+                      <item.icon className="h-4 w-4" />
+                      {/* Navigation label */}
+                      <span className="truncate font-body text-sm font-medium">
                         {item.title}
                       </span>
                     </Link>
@@ -73,11 +77,8 @@ export function DashboardSidebar({ type, ...props }: SidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="p-4 text-xs text-muted-foreground">
-          Hospital Voice Agent v1.0
-        </div>
-      </SidebarFooter>
+
+      {/* Sidebar rail for visual consistency */}
       <SidebarRail />
     </Sidebar>
   );
