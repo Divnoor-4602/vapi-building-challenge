@@ -15,23 +15,13 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { navigationItems } from "@/constants";
+import { doctorNavigationItems, userNavigationItems } from "@/constants";
 
-/**
- * UserDashboardSidebar Component
- *
- * A collapsible sidebar for the user dashboard that provides navigation
- * and branding. Features include:
- * - Icon-collapsible design for space efficiency
- * - Active state highlighting based on current route
- * - Brand header with application identity
- * - Organized navigation menu from constants
- * - Footer with version information
- */
-export function UserDashboardSidebar({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
-  // Get current pathname to determine active navigation item
+type SidebarProps = React.ComponentProps<typeof Sidebar> & {
+  type?: "user" | "doctor";
+};
+
+export function DashboardSidebar({ type, ...props }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -66,8 +56,10 @@ export function UserDashboardSidebar({
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Map through navigation items from constants */}
-              {navigationItems.map((item) => (
+              {(type === "user"
+                ? userNavigationItems
+                : doctorNavigationItems
+              ).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
                     <Link href={item.url}>

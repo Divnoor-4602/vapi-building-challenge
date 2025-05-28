@@ -25,7 +25,7 @@ export default async function Layout({
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <DashboardSidebar type="user" />
+      <DashboardSidebar type="doctor" />
       <SidebarInset className="bg-white">
         <main className="w-full rounded-xl">
           <header className="flex h-16 shrink-0 items-center gap-2">
