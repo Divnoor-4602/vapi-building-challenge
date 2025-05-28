@@ -232,4 +232,60 @@ export default defineSchema({
   })
     .index("byPatientId", ["patientId"])
     .index("byTicketId", ["ticketId"]),
+
+  // Appointments table
+  appointments: defineTable({
+    // Reference to user and profile
+    userId: v.id("users"),
+    profileId: v.id("profiles"),
+    ticketId: v.optional(v.id("medicalTickets")),
+
+    // Appointment details
+    title: v.string(),
+    description: v.optional(v.string()),
+    startTime: v.number(), // Unix timestamp
+    endTime: v.number(), // Unix timestamp
+
+    // Doctor information
+    doctorId: v.string(),
+    doctorName: v.string(),
+    doctorSpecialty: v.string(),
+
+    // Appointment status and type
+    status: v.union(
+      v.literal("scheduled"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("no_show")
+    ),
+    type: v.union(
+      v.literal("checkup"),
+      v.literal("consultation"),
+      v.literal("follow_up"),
+      v.literal("emergency"),
+      v.literal("other")
+    ),
+
+    // Location and meeting details
+    location: v.union(
+      v.literal("in_person"),
+      v.literal("virtual")
+    ),
+    meetingLink: v.optional(v.string()),
+
+    // Additional information
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("byUserId", ["userId"])
+    .index("byProfileId", ["profileId"])
+    .index("byTicketId", ["ticketId"])
+    .index("byDoctorId", ["doctorId"])
+    .index("byStatus", ["status"])
+    .index("byStartTime", ["startTime"])
+    .index("byUserIdAndStatus", ["userId", "status"])
+    .index("byDoctorIdAndStatus", ["doctorId", "status"])
+    .index("byUserIdAndStartTime", ["userId", "startTime"])
+    .index("byDoctorIdAndStartTime", ["doctorId", "startTime"]),
 });

@@ -87,3 +87,34 @@ async function userByClerkId(ctx: QueryCtx, clerkId: string) {
     .withIndex("byClerkId", (q) => q.eq("clerkId", clerkId))
     .unique();
 }
+
+// Get user by Clerk ID
+export const getUserByClerkId = query({
+  args: {
+    clerkId: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      clerkId: v.string(),
+      name: v.string(),
+      email: v.string(),
+      userType: v.union(
+        v.literal("user"),
+        v.literal("patient"),
+        v.literal("admin")
+      ),
+      isActive: v.boolean(),
+      avatarUrl: v.optional(v.string()),
+      lastLoginAt: v.optional(v.number()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("byClerkId", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+    return user;
+  },
+});
