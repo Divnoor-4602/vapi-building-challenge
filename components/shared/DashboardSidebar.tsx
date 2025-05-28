@@ -16,11 +16,13 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { navigationItems } from "@/constants";
+import { doctorNavigationItems, userNavigationItems } from "@/constants";
 
-export function UserDashboardSidebar({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
+type SidebarProps = React.ComponentProps<typeof Sidebar> & {
+  type?: "user" | "doctor";
+};
+
+export function DashboardSidebar({ type, ...props }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -52,7 +54,10 @@ export function UserDashboardSidebar({
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
+              {(type === "user"
+                ? userNavigationItems
+                : doctorNavigationItems
+              ).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
                     <Link href={item.url}>
