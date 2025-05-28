@@ -15,7 +15,6 @@ export default async function DashboardPage() {
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between flex-col gap-4 sm:flex-row">
-          <div></div>
           <h1 className="text-4xl font-extrabold">Dashboard</h1>
           <Badge
             variant={isProfileComplete ? "default" : "destructive"}
