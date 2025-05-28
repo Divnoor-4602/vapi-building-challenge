@@ -15,10 +15,10 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { doctorNavigationItems, userNavigationItems } from "@/constants";
+import { doctorNavigationItems, userNavigationItems, adminNavigationItems } from "@/constants";
 
 type SidebarProps = React.ComponentProps<typeof Sidebar> & {
-  type?: "user" | "doctor";
+  type?: "user" | "doctor" | "admin";
 };
 
 export function DashboardSidebar({ type, ...props }: SidebarProps) {
@@ -58,7 +58,9 @@ export function DashboardSidebar({ type, ...props }: SidebarProps) {
             <SidebarMenu>
               {(type === "user"
                 ? userNavigationItems
-                : doctorNavigationItems
+                : type === "doctor"
+                ? doctorNavigationItems
+                : adminNavigationItems
               ).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>

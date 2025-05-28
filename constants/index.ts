@@ -7,6 +7,11 @@ import {
   HelpCircle,
   HeartPlus,
   Clock,
+  Users,
+  Shield,
+  Database,
+  Activity,
+  Bot,
 } from "lucide-react";
 
 export const userNavigationItems = [
@@ -71,6 +76,54 @@ export const doctorNavigationItems = [
   {
     title: "Settings",
     url: "/doctor-dashboard/settings",
+    icon: Settings,
+  },
+];
+
+export const adminNavigationItems = [
+  {
+    title: "Dashboard",
+    url: "/admin-dashboard",
+    icon: Home,
+  },
+  {
+    title: "Users",
+    url: "/admin-dashboard/users",
+    icon: Users,
+  },
+  {
+    title: "Doctors",
+    url: "/admin-dashboard/doctors",
+    icon: HeartPlus,
+  },
+  {
+    title: "AI Agents",
+    url: "/admin-dashboard/ai-agents",
+    icon: Bot,
+  },
+  {
+    title: "Analytics",
+    url: "/admin-dashboard/analytics",
+    icon: BarChart3,
+  },
+  {
+    title: "System Health",
+    url: "/admin-dashboard/system-health",
+    icon: Activity,
+  },
+  {
+    title: "Database",
+    url: "/admin-dashboard/database",
+    icon: Database,
+  },
+  {
+    title: "Security",
+    url: "/admin-dashboard/security",
+    icon: Shield,
+  },
+  {
+    title: "Settings",
+    url: "/admin-dashboard/settings",
     icon: Settings,
   },
 ];
