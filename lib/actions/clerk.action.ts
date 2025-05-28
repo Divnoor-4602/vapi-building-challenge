@@ -44,7 +44,6 @@ export const getGoogleOauthToken = async () => {
         `Failed to fetch calendar events: ${calendar.statusText}`
       );
     }
-    
     const events = await calendar.json();
 
     return {
