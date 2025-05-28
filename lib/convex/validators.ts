@@ -77,11 +77,7 @@ export const userValidator = v.object({
   name: v.string(),
   email: v.string(),
   avatarUrl: v.optional(v.string()),
-  userType: v.union(
-    v.literal("user"),
-    v.literal("patient"),
-    v.literal("admin")
-  ),
+  userType: v.union(v.literal("user"), v.literal("doctor"), v.literal("admin")),
   isActive: v.boolean(),
   lastLoginAt: v.optional(v.number()),
   _creationTime: v.number(),

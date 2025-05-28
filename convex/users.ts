@@ -1,4 +1,9 @@
-import { internalMutation, query, QueryCtx } from "./_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+  QueryCtx,
+} from "./_generated/server";
 import { UserJSON } from "@clerk/backend";
 import { v, Validator } from "convex/values";
 
@@ -16,7 +21,7 @@ export const current = query({
       avatarUrl: v.optional(v.string()),
       userType: v.union(
         v.literal("user"),
-        v.literal("patient"),
+        v.literal("doctor"),
         v.literal("admin")
       ),
       isActive: v.boolean(),
@@ -24,6 +29,30 @@ export const current = query({
   ),
   handler: async (ctx) => {
     return await getCurrentUser(ctx);
+  },
+});
+
+export const updateUserType = mutation({
+  args: {
+    userId: v.id("users"),
+    userType: v.union(
+      v.literal("user"),
+      v.literal("doctor"),
+      v.literal("admin")
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Check if current user is admin
+    const currentUser = await getCurrentUser(ctx);
+    if (!currentUser || currentUser.userType !== "admin") {
+      throw new Error("Only admins can update user types");
+    }
+
+    await ctx.db.patch(args.userId, {
+      userType: args.userType,
+    });
+    return null;
   },
 });
 

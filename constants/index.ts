@@ -1,12 +1,12 @@
 import {
   Home,
   Calendar,
-  BarChart3,
   User,
   Settings,
-  HelpCircle,
   HeartPlus,
-  Clock,
+  Ticket,
+  Activity,
+  FileText,
 } from "lucide-react";
 
 export const userNavigationItems = [
@@ -21,9 +21,9 @@ export const userNavigationItems = [
     icon: Calendar,
   },
   {
-    title: "Reports",
-    url: "/user-dashboard/reports",
-    icon: BarChart3,
+    title: "Tickets",
+    url: "/user-dashboard/tickets",
+    icon: Ticket,
   },
   {
     title: "Profile",
@@ -35,18 +35,23 @@ export const userNavigationItems = [
     url: "/user-dashboard/settings",
     icon: Settings,
   },
-  {
-    title: "Support",
-    url: "/user-dashboard/support",
-    icon: HelpCircle,
-  },
 ];
 
 export const doctorNavigationItems = [
   {
-    title: "Profile",
+    title: "Home",
     url: "/doctor-dashboard",
-    icon: User,
+    icon: Home,
+  },
+  {
+    title: "Live Ticket Review",
+    url: "/doctor-dashboard/live-tickets",
+    icon: Activity,
+  },
+  {
+    title: "All Tickets",
+    url: "/doctor-dashboard/tickets",
+    icon: FileText,
   },
   {
     title: "Patients",
@@ -54,19 +59,9 @@ export const doctorNavigationItems = [
     icon: HeartPlus,
   },
   {
-    title: "Appointments",
-    url: "/doctor-dashboard/appointments",
-    icon: Clock,
-  },
-  {
-    title: "Calendar",
-    url: "/doctor-dashboard/calendar",
-    icon: Calendar,
-  },
-  {
-    title: "Reports",
-    url: "/doctor-dashboard/reports",
-    icon: BarChart3,
+    title: "Profile",
+    url: "/doctor-dashboard/profile",
+    icon: User,
   },
   {
     title: "Settings",

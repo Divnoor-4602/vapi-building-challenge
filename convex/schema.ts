@@ -15,7 +15,7 @@ export default defineSchema({
     // User role/type
     userType: v.union(
       v.literal("user"),
-      v.literal("patient"),
+      v.literal("doctor"),
       v.literal("admin")
     ),
 

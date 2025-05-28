@@ -3,8 +3,8 @@ import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import ClerkThemeProvider from "@/components/providers/ClerkThemeProvider";
-import { ThemeProvider } from "next-themes";
-import StagewiseToolbar from "@/components/shared/StagewiseToolbar";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { Toaster } from "sonner";
 
 const bricolageGrotesque = Bricolage_Grotesque({
   variable: "--font-bricolage-grotesque",
@@ -32,6 +32,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${bricolageGrotesque.variable} ${manrope.variable} antialiased`}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
@@ -41,9 +42,11 @@ export default function RootLayout({
           storageKey="theme"
         >
           <ClerkThemeProvider>
-            <ConvexClientProvider>{children}</ConvexClientProvider>
+            <ConvexClientProvider>
+              {children}
+              <Toaster />
+            </ConvexClientProvider>
           </ClerkThemeProvider>
-          <StagewiseToolbar />
         </ThemeProvider>
       </body>
     </html>

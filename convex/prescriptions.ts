@@ -193,3 +193,48 @@ export const createTestPrescription = mutation({
     return prescriptionId;
   },
 });
+
+// Create multiple prescriptions for a medical ticket
+export const createMultiplePrescriptions = mutation({
+  args: {
+    patientId: v.id("patients"),
+    ticketId: v.id("medicalTickets"),
+    prescriptions: v.array(
+      v.object({
+        medication: v.string(),
+        dosage: v.string(),
+        frequency: v.string(),
+        instructions: v.string(),
+      })
+    ),
+    notes: v.optional(v.string()),
+  },
+  returns: v.array(v.id("prescriptions")),
+  handler: async (ctx, args) => {
+    // Verify the ticket exists
+    const ticket = await ctx.db.get(args.ticketId);
+    if (!ticket) {
+      throw new Error("Medical ticket not found");
+    }
+
+    // Verify the patient exists
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient) {
+      throw new Error("Patient not found");
+    }
+
+    // Create all prescriptions
+    const prescriptionIds = [];
+    for (const prescriptionData of args.prescriptions) {
+      const prescriptionId = await ctx.db.insert("prescriptions", {
+        patientId: args.patientId,
+        ticketId: args.ticketId,
+        prescriptionDetails: prescriptionData,
+        notes: args.notes,
+      });
+      prescriptionIds.push(prescriptionId);
+    }
+
+    return prescriptionIds;
+  },
+});

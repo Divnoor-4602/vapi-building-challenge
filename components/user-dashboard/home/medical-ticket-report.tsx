@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "../ui/badge";
+import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Clock,

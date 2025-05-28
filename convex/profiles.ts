@@ -391,6 +391,96 @@ export const getProfileMissingFields = query({
   },
 });
 
+export const getCurrentUserProfile = query({
+  args: {},
+  returns: v.union(
+    v.null(),
+    v.object({
+      user: userValidator,
+      profile: v.union(v.null(), profileValidator),
+    })
+  ),
+  handler: async (ctx) => {
+    // Get the current user's identity
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return null;
+    }
+
+    // Get the user's email from their identity
+    const email = identity.email;
+
+    if (!email) {
+      return null;
+    }
+
+    // Find the user by email
+    const user = await ctx.db
+      .query("users")
+      .withIndex("byEmail", (q) => q.eq("email", email))
+      .unique();
+
+    if (!user) {
+      return null;
+    }
+
+    // Find the user's profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("byUserId", (q) => q.eq("userId", user._id))
+      .unique();
+
+    return {
+      user,
+      profile: profile ?? null,
+    };
+  },
+});
+
+export const getProfileCompletionStatus = query({
+  args: {},
+  returns: v.boolean(),
+  handler: async (ctx) => {
+    // Get the current user's identity
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      return false;
+    }
+
+    // Get the user's email from their identity
+    const email = identity.email;
+
+    if (!email) {
+      return false;
+    }
+
+    // Find the user by email
+    const user = await ctx.db
+      .query("users")
+      .withIndex("byEmail", (q) => q.eq("email", email))
+      .unique();
+
+    if (!user) {
+      return false;
+    }
+
+    // Find the user's profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("byUserId", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!profile) {
+      return false;
+    }
+
+    // Return the profile completion status
+    return profile.isProfileComplete;
+  },
+});
+
 // Actions for API integration (these call the mutations internally)
 export const createPatientProfileAction = action({
   args: {
@@ -424,7 +514,7 @@ export const createPatientProfileAction = action({
       name: string;
       email: string;
       avatarUrl?: string;
-      userType: "user" | "patient" | "admin";
+      userType: "user" | "doctor" | "admin";
       isActive: boolean;
       lastLoginAt?: number;
       _creationTime: number;
@@ -476,7 +566,7 @@ export const updatePatientProfileAction = action({
       name: string;
       email: string;
       avatarUrl?: string;
-      userType: "user" | "patient" | "admin";
+      userType: "user" | "doctor" | "admin";
       isActive: boolean;
       lastLoginAt?: number;
       _creationTime: number;

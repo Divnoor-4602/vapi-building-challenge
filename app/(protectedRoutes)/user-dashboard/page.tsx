@@ -1,31 +1,31 @@
 import React from "react";
+import { SignOutButton } from "@clerk/nextjs";
+import { LogOut } from "lucide-react";
 import {
   ActionCard,
   AppointmentsTable,
   PrescriptionCard,
   MedicalTicketReport,
+  ProfileStatusBadge,
+  LiveTicketStatus,
 } from "@/components/user-dashboard";
-import { Badge } from "@/components/ui/badge";
 
-export default async function DashboardPage() {
-  // TODO: Replace with actual profile completion check
-  const isProfileComplete = false; // This should come from user data/API
-
+export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between flex-col gap-4 sm:flex-row">
+        <div className="flex items-center justify-between gap-4">
           <h1 className="text-4xl font-extrabold">Dashboard</h1>
-          <Badge
-            variant={isProfileComplete ? "default" : "destructive"}
-            className={
-              isProfileComplete
-                ? "bg-green-100 text-green-800 hover:bg-green-200 border-green-200"
-                : "bg-red-100 text-red-800 hover:bg-red-200 border-red-200"
-            }
-          >
-            {isProfileComplete ? "Profile Complete" : "Profile Incomplete"}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <LiveTicketStatus />
+            <ProfileStatusBadge />
+            <SignOutButton>
+              <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
+            </SignOutButton>
+          </div>
         </div>
 
         {/* Dashboard Grid Layout */}

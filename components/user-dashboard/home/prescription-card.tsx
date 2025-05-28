@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "../ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Pill, Clock, FileText, Calendar } from "lucide-react";
 
 // Type based on the schema
