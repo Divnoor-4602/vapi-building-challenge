@@ -4,6 +4,7 @@ import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import ClerkThemeProvider from "@/components/providers/ClerkThemeProvider";
 import { ThemeProvider } from "next-themes";
+import StagewiseToolbar from "@/components/shared/StagewiseToolbar";
 
 const bricolageGrotesque = Bricolage_Grotesque({
   variable: "--font-bricolage-grotesque",
@@ -42,6 +43,7 @@ export default function RootLayout({
           <ClerkThemeProvider>
             <ConvexClientProvider>{children}</ConvexClientProvider>
           </ClerkThemeProvider>
+          <StagewiseToolbar />
         </ThemeProvider>
       </body>
     </html>
