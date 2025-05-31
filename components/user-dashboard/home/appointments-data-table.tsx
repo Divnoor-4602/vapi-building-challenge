@@ -61,10 +61,10 @@ export function AppointmentsDataTable<TData, TValue>({
           <Input
             placeholder="Search appointments..."
             value={
-              (table.getColumn("patientName")?.getFilterValue() as string) ?? ""
+              (table.getColumn("profile")?.getFilterValue() as string) ?? ""
             }
             onChange={(event) =>
-              table.getColumn("patientName")?.setFilterValue(event.target.value)
+              table.getColumn("profile")?.setFilterValue(event.target.value)
             }
             className="pl-10 border-gray-200"
           />

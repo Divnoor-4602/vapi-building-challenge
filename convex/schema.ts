@@ -232,4 +232,53 @@ export default defineSchema({
   })
     .index("byPatientId", ["patientId"])
     .index("byTicketId", ["ticketId"]),
+
+  // Appointments - linking doctors and patients with Google Calendar integration
+  appointments: defineTable({
+    // User references
+    doctorId: v.id("users"), // Must be userType "doctor"
+    patientId: v.id("users"), // Must be userType "user"
+    profileId: v.id("profiles"), // Patient's profile
+    patientRecordId: v.id("patients"), // Patient record
+
+    // Optional medical ticket reference - not all appointments come from tickets
+    ticketId: v.optional(v.id("medicalTickets")),
+
+    // Google Calendar Integration
+    googleCalendarEventId: v.optional(v.string()),
+    googleCalendarResponse: v.optional(v.any()), // Raw Google Calendar API response
+
+    // Appointment Details (matching Google Calendar Create Event structure)
+    summary: v.string(), // Title/description of the appointment
+    startDateTime: v.string(), // ISO format date-time
+    endDateTime: v.string(), // ISO format date-time
+    timeZone: v.string(), // Timezone for the appointment
+
+    // Attendees
+    attendees: v.array(v.string()), // Array of email addresses
+
+    // Appointment Status
+    status: v.union(
+      v.literal("cancelled"),
+      v.literal("completed"),
+      v.literal("confirmed")
+    ),
+
+    // Additional Information
+    notes: v.optional(v.string()),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("byDoctorId", ["doctorId"])
+    .index("byPatientId", ["patientId"])
+    .index("byProfileId", ["profileId"])
+    .index("byPatientRecordId", ["patientRecordId"])
+    .index("byTicketId", ["ticketId"])
+    .index("byStatus", ["status"])
+    .index("byDoctorIdAndStatus", ["doctorId", "status"])
+    .index("byPatientIdAndStatus", ["patientId", "status"])
+    .index("byStartDateTime", ["startDateTime"])
+    .index("byGoogleCalendarEventId", ["googleCalendarEventId"]),
 });

@@ -238,3 +238,232 @@ export const createMultiplePrescriptions = mutation({
     return prescriptionIds;
   },
 });
+
+// Get prescriptions for a user by Clerk ID (for the most recent medical tickets)
+export const getPrescriptionsForUser = query({
+  args: {
+    clerkId: v.string(),
+    limit: v.optional(v.number()), // Optional limit, defaults to 3
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("prescriptions"),
+      _creationTime: v.number(),
+      prescriptionDetails: v.object({
+        medication: v.string(),
+        dosage: v.string(),
+        frequency: v.string(),
+        instructions: v.string(),
+      }),
+      notes: v.optional(v.string()),
+
+      // Ticket information
+      ticket: v.object({
+        _id: v.id("medicalTickets"),
+        _creationTime: v.number(),
+        status: v.union(
+          v.literal("cancelled"),
+          v.literal("completed"),
+          v.literal("in_progress"),
+          v.literal("on_hold")
+        ),
+        createdAt: v.number(),
+      }),
+
+      // Patient information (chief complaint)
+      patient: v.object({
+        _id: v.id("patients"),
+        chiefComplaint: v.string(),
+      }),
+
+      // Profile information (prescribing context)
+      profile: v.object({
+        firstName: v.string(),
+        lastName: v.string(),
+      }),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const prescriptionLimit = args.limit ?? 3; // Default to 3 prescriptions
+
+    // First, find the user by Clerk ID
+    const user = await ctx.db
+      .query("users")
+      .withIndex("byClerkId", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    if (!user) {
+      // Return empty array if user not found
+      return [];
+    }
+
+    // Get a larger number of recent medical tickets to ensure we have enough prescriptions
+    const recentTickets = await ctx.db
+      .query("medicalTickets")
+      .withIndex("byUserId", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .take(10); // Get more tickets to ensure we have enough prescriptions
+
+    // Get prescriptions for these tickets
+    const prescriptionsWithContext = [];
+
+    for (const ticket of recentTickets) {
+      // Get prescriptions for this ticket
+      const prescriptions = await ctx.db
+        .query("prescriptions")
+        .withIndex("byTicketId", (q) => q.eq("ticketId", ticket._id))
+        .collect();
+
+      // Get patient and profile data for context
+      const patient = await ctx.db.get(ticket.patientId);
+      const profile = await ctx.db.get(ticket.profileId);
+
+      if (!patient || !profile) {
+        continue; // Skip if we can't get the required data
+      }
+
+      // Add each prescription with context
+      for (const prescription of prescriptions) {
+        prescriptionsWithContext.push({
+          _id: prescription._id,
+          _creationTime: prescription._creationTime,
+          prescriptionDetails: prescription.prescriptionDetails,
+          notes: prescription.notes,
+          ticket: {
+            _id: ticket._id,
+            _creationTime: ticket._creationTime,
+            status: ticket.status,
+            createdAt: ticket.createdAt,
+          },
+          patient: {
+            _id: patient._id,
+            chiefComplaint: patient.chiefComplaint,
+          },
+          profile: {
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+          },
+        });
+      }
+    }
+
+    // Sort by creation time (most recent first) and limit to the requested number
+    prescriptionsWithContext.sort((a, b) => b._creationTime - a._creationTime);
+
+    // Return only the requested number of prescriptions
+    return prescriptionsWithContext.slice(0, prescriptionLimit);
+  },
+});
+
+// Check for recent prescription creation (for polling during VAPI calls)
+export const checkRecentPrescriptionCreation = query({
+  args: {
+    userId: v.id("users"),
+    profileId: v.id("profiles"),
+    afterTimestamp: v.number(), // Only check prescriptions created after this timestamp
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      prescription: v.object({
+        _id: v.id("prescriptions"),
+        _creationTime: v.number(),
+        patientId: v.id("patients"),
+        ticketId: v.id("medicalTickets"),
+        prescriptionDetails: v.object({
+          medication: v.string(),
+          dosage: v.string(),
+          frequency: v.string(),
+          instructions: v.string(),
+        }),
+        notes: v.optional(v.string()),
+      }),
+      patient: v.object({
+        _id: v.id("patients"),
+        chiefComplaint: v.string(),
+      }),
+      ticket: v.object({
+        _id: v.id("medicalTickets"),
+        status: v.union(
+          v.literal("cancelled"),
+          v.literal("completed"),
+          v.literal("in_progress"),
+          v.literal("on_hold")
+        ),
+        createdAt: v.number(),
+      }),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const { userId, profileId, afterTimestamp } = args;
+
+    // Find prescriptions created after the timestamp for this user/profile
+    // First get the user's medical tickets
+    const userTickets = await ctx.db
+      .query("medicalTickets")
+      .withIndex("byUserId", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("profileId"), profileId))
+      .collect();
+
+    if (userTickets.length === 0) {
+      return null;
+    }
+
+    // Find the most recent prescription created after the timestamp
+    let mostRecentPrescription = null;
+    let associatedPatient = null;
+    let associatedTicket = null;
+
+    for (const ticket of userTickets) {
+      const prescriptions = await ctx.db
+        .query("prescriptions")
+        .withIndex("byTicketId", (q) => q.eq("ticketId", ticket._id))
+        .filter((q) => q.gt(q.field("_creationTime"), afterTimestamp))
+        .order("desc")
+        .collect();
+
+      if (prescriptions.length > 0) {
+        const latestPrescription = prescriptions[0];
+
+        if (
+          !mostRecentPrescription ||
+          latestPrescription._creationTime >
+            mostRecentPrescription._creationTime
+        ) {
+          mostRecentPrescription = latestPrescription;
+          associatedTicket = ticket;
+
+          // Get patient information
+          const patient = await ctx.db.get(ticket.patientId);
+          if (patient) {
+            associatedPatient = patient;
+          }
+        }
+      }
+    }
+
+    if (!mostRecentPrescription || !associatedPatient || !associatedTicket) {
+      return null;
+    }
+
+    return {
+      prescription: {
+        _id: mostRecentPrescription._id,
+        _creationTime: mostRecentPrescription._creationTime,
+        patientId: mostRecentPrescription.patientId,
+        ticketId: mostRecentPrescription.ticketId,
+        prescriptionDetails: mostRecentPrescription.prescriptionDetails,
+        notes: mostRecentPrescription.notes,
+      },
+      patient: {
+        _id: associatedPatient._id,
+        chiefComplaint: associatedPatient.chiefComplaint,
+      },
+      ticket: {
+        _id: associatedTicket._id,
+        status: associatedTicket.status,
+        createdAt: associatedTicket.createdAt,
+      },
+    };
+  },
+});

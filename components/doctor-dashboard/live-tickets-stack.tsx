@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -34,9 +33,6 @@ import {
   User,
   Stethoscope,
   AlertTriangle,
-  Clock,
-  FileText,
-  Phone,
   Eye,
   CheckCircle,
   Calendar,
@@ -228,29 +224,6 @@ export function LiveTicketsStack({ className }: LiveTicketsStackProps) {
     }
   };
 
-  if (incomingTickets === undefined) {
-    return (
-      <Card className={`border-gray-200 shadow-sm ${className}`}>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold text-gray-900 font-heading flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span>Live Incoming Tickets</span>
-            </div>
-          </CardTitle>
-          <CardDescription className="text-sm text-gray-600">
-            Loading incoming patient tickets...
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (!incomingTickets || incomingTickets.length === 0) {
     return (
       <Card className={`border-gray-200 shadow-sm ${className}`}>
@@ -402,186 +375,135 @@ export function LiveTicketsStack({ className }: LiveTicketsStackProps) {
                   </div>
 
                   {/* Symptoms Preview */}
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium text-sm">Symptoms</span>
-                    </div>
+                  {ticket.patient.currentSymptoms.length > 0 && (
                     <div className="space-y-1">
-                      {ticket.patient.currentSymptoms
-                        .slice(0, 2)
-                        .map((symptom, idx) => (
-                          <div
-                            key={idx}
-                            className="text-sm text-gray-600 ml-6 flex items-center gap-2"
-                          >
-                            <span>• {symptom.symptom}</span>
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${severityVariants[symptom.severity]}`}
-                            >
-                              {symptom.severity}
-                            </Badge>
-                          </div>
-                        ))}
-                      {ticket.patient.currentSymptoms.length > 2 && (
-                        <div className="text-sm text-gray-500 ml-6">
-                          +{ticket.patient.currentSymptoms.length - 2} more
-                          symptoms
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Recommended Action */}
-                  {ticket.patient.recommendedAction && (
-                    <div className="space-y-2 mb-3">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium text-sm">
-                          Recommended Action
+                        <AlertTriangle className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs font-medium text-gray-700">
+                          Symptoms ({ticket.patient.currentSymptoms.length})
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600 ml-6">
-                        {ticket.patient.recommendedAction ===
-                        "schedule_appointment"
-                          ? "Schedule appointment with doctor"
-                          : ticket.patient.recommendedAction === "urgent_care"
-                            ? "Urgent care required"
-                            : ticket.patient.recommendedAction === "emergency"
-                              ? "Emergency care needed"
-                              : "Prescription consultation"}
+                      <div className="text-xs text-gray-600 ml-5 line-clamp-2">
+                        {ticket.patient.currentSymptoms
+                          .slice(0, 2)
+                          .map((s) => `${s.symptom} (${s.severity})`)
+                          .join(", ")}
+                        {ticket.patient.currentSymptoms.length > 2 &&
+                          ` +${ticket.patient.currentSymptoms.length - 2} more`}
                       </div>
                     </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                  {/* Action Button */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border-blue-200"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleTicketClick(ticket);
                       }}
                     >
                       <Eye className="mr-2 h-3 w-3" />
-                      Review
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-800 border-gray-200"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Phone className="h-3 w-3" />
+                      Review & Assign Next Steps
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             );
           })}
-        </CardContent>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Showing {Math.min(incomingTickets.length, 3)} of{" "}
-              {incomingTickets.length} ticket
-              {incomingTickets.length !== 1 ? "s" : ""} awaiting review
-              {incomingTickets.length > 3 && (
-                <span className="text-blue-600 ml-1">
-                  (+{incomingTickets.length - 3} more)
-                </span>
-              )}
+          {/* Show more indicator if there are more tickets */}
+          {incomingTickets.length > 3 && (
+            <div className="text-center pt-4">
+              <p className="text-sm text-gray-500">
+                +{incomingTickets.length - 3} more tickets waiting for review
+              </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-800 border-gray-200"
-            >
-              <FileText className="mr-2 h-3 w-3" />
-              View All
-            </Button>
-          </div>
-        </div>
+          )}
+        </CardContent>
       </Card>
 
-      {/* Ticket Details Modal */}
+      {/* Modal for ticket details and actions */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-blue-600" />
-              Ticket #{selectedTicket?._id.slice(-6)} - Medical Review
+              Medical Ticket #{selectedTicket?._id.slice(-6)}
             </DialogTitle>
             <DialogDescription>
-              Review patient information and assign next steps for medical care
+              Review patient information and assign next steps
             </DialogDescription>
           </DialogHeader>
 
           {selectedTicket && (
             <div className="space-y-6">
               {/* Patient Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Patient Information
-                  </h3>
-                  <div className="space-y-2">
-                    <p>
-                      <strong>Name:</strong> {selectedTicket.profile.firstName}{" "}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-3">
+                  Patient Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium">Name:</span>{" "}
+                      {selectedTicket.profile.firstName}{" "}
                       {selectedTicket.profile.lastName}
                     </p>
-                    <p>
-                      <strong>Age:</strong>{" "}
+                    <p className="text-sm">
+                      <span className="font-medium">Age:</span>{" "}
                       {new Date().getFullYear() -
                         new Date(
                           selectedTicket.profile.dateOfBirth
                         ).getFullYear()}
                     </p>
-                    <p>
-                      <strong>Gender:</strong>{" "}
+                    <p className="text-sm">
+                      <span className="font-medium">Gender:</span>{" "}
                       {selectedTicket.profile.gender || "Not specified"}
                     </p>
-                    <p>
-                      <strong>Phone:</strong>{" "}
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium">Phone:</span>{" "}
                       {selectedTicket.profile.phoneNumber}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Date of Birth:</span>{" "}
+                      {new Date(
+                        selectedTicket.profile.dateOfBirth
+                      ).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Stethoscope className="h-5 w-5" />
-                    Chief Complaint
-                  </h3>
-                  <p className="text-gray-700">
-                    {selectedTicket.patient.chiefComplaint}
-                  </p>
-                </div>
               </div>
 
-              {/* Symptoms */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
+              {/* Chief Complaint */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Chief Complaint
+                </h3>
+                <p className="text-gray-700 bg-gray-50 p-3 rounded-md">
+                  {selectedTicket.patient.chiefComplaint}
+                </p>
+              </div>
+
+              {/* Current Symptoms */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">
                   Current Symptoms
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
                   {selectedTicket.patient.currentSymptoms.map(
-                    (symptom, idx) => (
+                    (symptom, index) => (
                       <div
-                        key={idx}
-                        className="border-0 bg-gray-50 rounded-lg p-3"
+                        key={index}
+                        className="border border-gray-200 rounded-lg p-3"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-medium">{symptom.symptom}</span>
                           <Badge className={severityVariants[symptom.severity]}>
-                            {symptom.severity}
+                            {symptom.severity.toUpperCase()}
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-600">
@@ -599,254 +521,227 @@ export function LiveTicketsStack({ className }: LiveTicketsStackProps) {
               </div>
 
               {/* Medical History */}
-              {selectedTicket.profile.medicalHistory && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Medical History</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Allergies</h4>
-                      <p className="text-sm text-gray-600">
-                        {selectedTicket.profile.medicalHistory.allergies
-                          .length > 0
-                          ? selectedTicket.profile.medicalHistory.allergies.join(
+              {selectedTicket.profile.medicalHistory &&
+                (selectedTicket.profile.medicalHistory.allergies.length > 0 ||
+                  selectedTicket.profile.medicalHistory.currentMedications
+                    .length > 0) && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-3">
+                      Medical History
+                    </h3>
+                    <div className="bg-yellow-50 p-4 rounded-lg space-y-3">
+                      {selectedTicket.profile.medicalHistory.allergies.length >
+                        0 && (
+                        <div>
+                          <p className="font-medium text-yellow-900">
+                            Allergies:
+                          </p>
+                          <p className="text-yellow-800">
+                            {selectedTicket.profile.medicalHistory.allergies.join(
                               ", "
-                            )
-                          : "None reported"}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Current Medications</h4>
-                      <div className="text-sm text-gray-600">
-                        {selectedTicket.profile.medicalHistory
-                          .currentMedications.length > 0
-                          ? selectedTicket.profile.medicalHistory.currentMedications.map(
-                              (med, idx) => (
-                                <p key={idx}>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      {selectedTicket.profile.medicalHistory.currentMedications
+                        .length > 0 && (
+                        <div>
+                          <p className="font-medium text-yellow-900">
+                            Current Medications:
+                          </p>
+                          <div className="space-y-1">
+                            {selectedTicket.profile.medicalHistory.currentMedications.map(
+                              (med, index) => (
+                                <p
+                                  key={index}
+                                  className="text-yellow-800 text-sm"
+                                >
                                   {med.name} - {med.dosage} ({med.frequency})
                                 </p>
                               )
-                            )
-                          : "None reported"}
-                      </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Action Selection */}
-              <div className="space-y-4 border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold">Assign Next Steps</h3>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Assign Next Steps
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Button
                     variant={
                       selectedAction === "appointment" ? "default" : "outline"
                     }
-                    className="h-20 flex flex-col items-center justify-center gap-2 border-0 bg-gray-50 hover:bg-gray-100"
+                    className="h-20 flex-col"
                     onClick={() => setSelectedAction("appointment")}
                   >
-                    <Calendar className="h-6 w-6" />
-                    <span>Schedule Appointment</span>
+                    <Calendar className="h-6 w-6 mb-2" />
+                    Schedule Appointment
                   </Button>
                   <Button
                     variant={
                       selectedAction === "pharmacy" ? "default" : "outline"
                     }
-                    className="h-20 flex flex-col items-center justify-center gap-2 border-0 bg-gray-50 hover:bg-gray-100"
+                    className="h-20 flex-col"
                     onClick={() => setSelectedAction("pharmacy")}
                   >
-                    <Pill className="h-6 w-6" />
-                    <span>Prescribe Medication</span>
+                    <Pill className="h-6 w-6 mb-2" />
+                    Prescribe Medication
                   </Button>
                 </div>
+              </div>
 
-                {/* Appointment Type Selection */}
-                {selectedAction === "appointment" && (
-                  <div className="space-y-4 p-4 border-0 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium">Select Appointment Type</h4>
-                    <Select
-                      value={appointmentType}
-                      onValueChange={setAppointmentType}
-                    >
-                      <SelectTrigger className="border-gray-200">
-                        <SelectValue placeholder="Choose appointment type..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {appointmentTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Prescription Form */}
-                {selectedAction === "pharmacy" && (
-                  <div className="space-y-4 p-4 border-0 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Add Prescriptions</h4>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addPrescription}
-                        className="border-gray-200"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Prescription
-                      </Button>
-                    </div>
-
-                    {prescriptions.length === 0 && (
-                      <p className="text-sm text-gray-500 text-center py-4">
-                        No prescriptions added yet. Click &quot;Add
-                        Prescription&quot; to start.
-                      </p>
-                    )}
-
-                    <div className="space-y-4">
-                      {prescriptions.map((prescription, index) => (
-                        <div
-                          key={index}
-                          className="border-0 bg-white rounded-lg p-4 space-y-3 shadow-sm"
-                        >
-                          <div className="flex items-center justify-between">
-                            <h5 className="font-medium">
-                              Prescription {index + 1}
-                            </h5>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removePrescription(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-sm font-medium">
-                                Medication
-                              </label>
-                              <Input
-                                placeholder="e.g., Amoxicillin"
-                                value={prescription.medication}
-                                onChange={(e) =>
-                                  updatePrescription(
-                                    index,
-                                    "medication",
-                                    e.target.value
-                                  )
-                                }
-                                className="border-gray-200"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">
-                                Dosage
-                              </label>
-                              <Input
-                                placeholder="e.g., 500mg"
-                                value={prescription.dosage}
-                                onChange={(e) =>
-                                  updatePrescription(
-                                    index,
-                                    "dosage",
-                                    e.target.value
-                                  )
-                                }
-                                className="border-gray-200"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">
-                                Frequency
-                              </label>
-                              <Input
-                                placeholder="e.g., Three times daily"
-                                value={prescription.frequency}
-                                onChange={(e) =>
-                                  updatePrescription(
-                                    index,
-                                    "frequency",
-                                    e.target.value
-                                  )
-                                }
-                                className="border-gray-200"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium">
-                                Instructions
-                              </label>
-                              <Input
-                                placeholder="e.g., Take with food"
-                                value={prescription.instructions}
-                                onChange={(e) =>
-                                  updatePrescription(
-                                    index,
-                                    "instructions",
-                                    e.target.value
-                                  )
-                                }
-                                className="border-gray-200"
-                              />
-                            </div>
-                          </div>
-                        </div>
+              {/* Appointment Type Selection */}
+              {selectedAction === "appointment" && (
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Appointment Type
+                  </h4>
+                  <Select
+                    value={appointmentType}
+                    onValueChange={setAppointmentType}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select appointment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {appointmentTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
                       ))}
-                    </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-                    {/* Show prescription badges */}
-                    {prescriptions.length > 0 && (
-                      <div className="space-y-2">
-                        <h5 className="font-medium text-sm">
-                          Prescriptions Summary:
-                        </h5>
-                        <div className="flex flex-wrap gap-2">
-                          {prescriptions.map(
-                            (prescription, index) =>
-                              prescription.medication && (
-                                <Badge
-                                  key={index}
-                                  variant="outline"
-                                  className="text-xs border-gray-200"
-                                >
-                                  {prescription.medication} -{" "}
-                                  {prescription.dosage}
-                                </Badge>
-                              )
-                          )}
+              {/* Prescription Form */}
+              {selectedAction === "pharmacy" && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">Prescriptions</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addPrescription}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Prescription
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {prescriptions.map((prescription, index) => (
+                      <div
+                        key={index}
+                        className="border border-gray-200 rounded-lg p-4"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="font-medium">
+                            Prescription {index + 1}
+                          </h5>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removePrescription(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium">
+                              Medication
+                            </label>
+                            <Input
+                              value={prescription.medication}
+                              onChange={(e) =>
+                                updatePrescription(
+                                  index,
+                                  "medication",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="e.g., Amoxicillin"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">
+                              Dosage
+                            </label>
+                            <Input
+                              value={prescription.dosage}
+                              onChange={(e) =>
+                                updatePrescription(
+                                  index,
+                                  "dosage",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="e.g., 500mg"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">
+                              Frequency
+                            </label>
+                            <Input
+                              value={prescription.frequency}
+                              onChange={(e) =>
+                                updatePrescription(
+                                  index,
+                                  "frequency",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="e.g., Twice daily"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">
+                              Instructions
+                            </label>
+                            <Input
+                              value={prescription.instructions}
+                              onChange={(e) =>
+                                updatePrescription(
+                                  index,
+                                  "instructions",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="e.g., Take with food"
+                            />
+                          </div>
                         </div>
                       </div>
-                    )}
+                    ))}
                   </div>
-                )}
-
-                {/* Notes */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Additional Notes (Optional)
-                  </label>
-                  <textarea
-                    className="w-full p-3 border border-gray-200 rounded-lg resize-none"
-                    rows={3}
-                    placeholder="Add any additional notes or instructions..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
                 </div>
+              )}
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-medium">Additional Notes</label>
+                <textarea
+                  className="w-full mt-1 p-3 border border-gray-300 rounded-md"
+                  rows={3}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any additional notes or instructions..."
+                />
               </div>
             </div>
           )}
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={handleCloseModal}
-              className="border-gray-200"
-            >
+            <Button variant="outline" onClick={handleCloseModal}>
               Cancel
             </Button>
             <Button

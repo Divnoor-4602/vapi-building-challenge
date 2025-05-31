@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { FileText, User, Stethoscope, Pill, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -50,34 +49,7 @@ export function RecentTicketsList({ className }: RecentTicketsListProps) {
     );
   }
 
-  if (tickets === undefined) {
-    return (
-      <Card className={`border-gray-200 shadow-sm ${className}`}>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold text-gray-900 font-heading">
-            Recent Tickets
-          </CardTitle>
-          <CardDescription className="text-sm text-gray-600">
-            Your most recent medical consultations
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="p-3 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-5 w-16" />
-              </div>
-              <Skeleton className="h-4 w-full mb-1" />
-              <Skeleton className="h-3 w-3/4" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (tickets.length === 0) {
+  if (!tickets || tickets.length === 0) {
     return (
       <Card className={`border-gray-200 shadow-sm ${className}`}>
         <CardHeader className="pb-4">
@@ -208,23 +180,31 @@ export function RecentTicketsList({ className }: RecentTicketsListProps) {
               <span className="text-xs text-gray-500">
                 {formatDate(ticket.createdAt)}
               </span>
-              <ArrowRight className="h-3 w-3 text-gray-400" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-6 px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+              >
+                View Details
+                <ArrowRight className="ml-1 h-2 w-2" />
+              </Button>
             </div>
           </div>
         ))}
 
-        {/* View All Button (if more than 3 tickets) */}
+        {/* View All Button */}
         {tickets.length > 3 && (
-          <Link href="/user-dashboard/tickets/all-tickets">
-            <Button
-              variant="outline"
-              className="w-full mt-3 bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-800 border-gray-200"
-              size="sm"
-            >
-              View All {tickets.length} Tickets
-              <ArrowRight className="ml-2 h-3 w-3" />
-            </Button>
-          </Link>
+          <div className="pt-2">
+            <Link href="/user-dashboard/tickets/all-tickets">
+              <Button
+                variant="outline"
+                className="w-full text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-800 border-gray-200"
+              >
+                View All {tickets.length} Tickets
+                <ArrowRight className="ml-2 h-3 w-3" />
+              </Button>
+            </Link>
+          </div>
         )}
       </CardContent>
     </Card>

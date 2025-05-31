@@ -1,13 +1,12 @@
-import { api } from "@/convex/_generated/api";
-import { ConvexHttpClient } from "convex/browser";
 import {
+  api,
+  fetchQuery,
+  fetchMutation,
   convertToConvexId,
   createVapiResponse,
   createVapiErrorResponse,
 } from "@/lib/api/utils";
 import { Id } from "@/convex/_generated/dataModel";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 interface GetPrescriptionRequest {
   ticketId: string;
@@ -59,12 +58,9 @@ export async function handleGetPrescription(
     const ticketId = ticketIdString as Id<"medicalTickets">;
 
     // First, try to get existing prescription
-    let prescriptionData = await convex.query(
-      api.prescriptions.getPrescription,
-      {
-        ticketId,
-      }
-    );
+    let prescriptionData = await fetchQuery(api.prescriptions.getPrescription, {
+      ticketId,
+    });
 
     // If no prescription exists, create a test prescription
     if (!prescriptionData) {
@@ -73,7 +69,8 @@ export async function handleGetPrescription(
       );
 
       try {
-        const prescriptionId = await convex.mutation(
+        // Use fetchMutation for mutations
+        const prescriptionId = await fetchMutation(
           api.prescriptions.createTestPrescription,
           {
             ticketId,
@@ -86,12 +83,9 @@ export async function handleGetPrescription(
         );
 
         // Now get the created prescription
-        prescriptionData = await convex.query(
-          api.prescriptions.getPrescription,
-          {
-            ticketId,
-          }
-        );
+        prescriptionData = await fetchQuery(api.prescriptions.getPrescription, {
+          ticketId,
+        });
       } catch (createError) {
         console.error(
           `${logPrefix} ❌ Error creating test prescription:`,

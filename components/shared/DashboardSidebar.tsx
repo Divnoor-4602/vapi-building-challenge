@@ -16,6 +16,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { doctorNavigationItems, userNavigationItems } from "@/constants";
+import Image from "next/image";
 
 type SidebarProps = React.ComponentProps<typeof Sidebar> & {
   type?: "user" | "doctor";
@@ -32,7 +33,14 @@ export function DashboardSidebar({ type, ...props }: SidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex">
+                <div className="flex items-center">
+                  <Image
+                    src="/nightingale-logo.png"
+                    alt="Nightingale"
+                    width={32}
+                    height={32}
+                    className="mr-2 rounded-[4px] object-cover"
+                  />
                   <div className="flex flex-col items-start">
                     {/* Primary brand name */}
                     <div className="truncate font-heading text-sm font-semibold">

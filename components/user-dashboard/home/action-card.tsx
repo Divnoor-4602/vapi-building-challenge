@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "convex/react";
 import { toast } from "sonner";
 import {
@@ -21,6 +21,14 @@ import {
 } from "lucide-react";
 import { createMedicalFlowCall } from "@/lib/actions/vapi.action";
 import { api } from "@/convex/_generated/api";
+import {
+  BookAppointmentModal,
+  RequestPrescriptionModal,
+} from "@/components/vapi";
+import {
+  validateProfileForAppointment,
+  getProfileCompletionMessage,
+} from "@/lib/utils/profileValidation";
 
 interface ActionCardProps {
   className?: string;
@@ -29,6 +37,11 @@ interface ActionCardProps {
 export function ActionCard({ className }: ActionCardProps) {
   // Query current user profile
   const userProfile = useQuery(api.profiles.getCurrentUserProfile);
+
+  // Modal state
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isRequestPrescriptionModalOpen, setIsRequestPrescriptionModalOpen] =
+    useState(false);
 
   // Handle the medical flow call
   const handleCompleteMedicalFlowCall = async () => {
@@ -55,23 +68,144 @@ export function ActionCard({ className }: ActionCardProps) {
     }
   };
 
-  // Individual VAPI handlers for specific flows
+  // Book appointment handler with profile validation
   const handleAppointmentCall = async () => {
+    if (!userProfile?.user || !userProfile?.profile) {
+      toast.error("Please complete your profile first", {
+        description: "A complete profile is required to book appointments",
+        richColors: true,
+      });
+      return;
+    }
+
+    // Validate profile completeness
+    const validation = validateProfileForAppointment(userProfile.profile);
+
+    if (!validation.isComplete) {
+      const message = getProfileCompletionMessage(validation);
+      toast.error("Profile incomplete", {
+        description: message,
+        richColors: true,
+        action: {
+          label: "Update Profile",
+          onClick: () => {
+            // TODO: Navigate to profile page or trigger profile update
+            console.log("Navigate to profile update");
+          },
+        },
+      });
+      return;
+    }
+
+    // Check microphone permission before opening modal
     try {
-      // TODO: Create appointment-specific VAPI call
-      console.log("Appointment booking call initiated");
+      // First, check if we already have permission
+      if (navigator.permissions) {
+        try {
+          const permissionStatus = await navigator.permissions.query({
+            name: "microphone" as PermissionName,
+          });
+
+          if (permissionStatus.state === "granted") {
+            setIsAppointmentModalOpen(true);
+            return;
+          } else if (permissionStatus.state === "denied") {
+            toast.error("Microphone Permission Blocked", {
+              description:
+                "Microphone access has been blocked. Please click the 🔒 lock icon in your browser's address bar and allow microphone access, then try again.",
+              richColors: true,
+              duration: 10000,
+              action: {
+                label: "How to Fix",
+                onClick: () => {
+                  // Show detailed instructions
+                  toast.info("Reset Microphone Permission", {
+                    description:
+                      "1. Click the 🔒 lock icon in your address bar\n2. Set Microphone to 'Allow'\n3. Refresh the page\n4. Try booking again",
+                    duration: 15000,
+                  });
+                },
+              },
+            });
+            return;
+          }
+        } catch {
+          // Permission query not supported, continue with getUserMedia
+        }
+      }
+
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false, // Explicitly disable video
+      });
+
+      // Stop the stream immediately after getting permission
+      stream.getTracks().forEach((track) => track.stop());
+
+      // Profile is complete and microphone permission granted, open the appointment modal
+      setIsAppointmentModalOpen(true);
     } catch (error) {
-      console.error("Error creating appointment call:", error);
+      if (error instanceof DOMException) {
+        if (
+          error.name === "NotAllowedError" ||
+          error.name === "PermissionDeniedError"
+        ) {
+          toast.error("Microphone Permission Required", {
+            description:
+              "Please allow microphone access to place voice calls. Click the 🔒 lock icon in your browser's address bar and enable microphone access.",
+            richColors: true,
+            duration: 10000,
+            action: {
+              label: "Detailed Steps",
+              onClick: () => {
+                toast.info("Enable Microphone Access", {
+                  description:
+                    "Chrome/Edge: Click 🔒 → Site Settings → Microphone → Allow\nFirefox: Click 🔒 → Permissions → Microphone → Allow\nSafari: Develop → User Agent → Allow...",
+                  duration: 20000,
+                });
+              },
+            },
+          });
+        } else if (error.name === "NotFoundError") {
+          toast.error("No Microphone Found", {
+            description:
+              "No microphone device was found. Please connect a microphone and try again.",
+            richColors: true,
+          });
+        } else {
+          toast.error("Microphone Access Error", {
+            description: `Unable to access microphone: ${error.message}. Please check your device settings and try again.`,
+            richColors: true,
+          });
+        }
+      } else {
+        toast.error("Audio Device Error", {
+          description:
+            "There was an issue accessing your audio device. Please try again.",
+          richColors: true,
+        });
+      }
     }
   };
 
+  // Handle prescription call
   const handlePrescriptionCall = async () => {
-    try {
-      // TODO: Create prescription-specific VAPI call
-      console.log("Prescription request call initiated");
-    } catch (error) {
-      console.error("Error creating prescription call:", error);
+    if (!userProfile?.user || !userProfile?.profile) {
+      toast.error("Please complete your profile first", {
+        description: "A complete profile is required for prescription requests",
+        richColors: true,
+      });
+      return;
     }
+
+    // Open prescription modal
+    setIsRequestPrescriptionModalOpen(true);
+  };
+
+  // handle update profile
+  const handleUpdateProfile = async () => {
+    console.log("Update profile clicked");
   };
 
   const handleCustomerCareCall = async () => {
@@ -83,9 +217,11 @@ export function ActionCard({ className }: ActionCardProps) {
     }
   };
 
-  // Check if phone number exists
+  // Check if phone number exists and profile completeness
   const hasPhoneNumber = userProfile?.profile?.phoneNumber;
-  const isLoading = userProfile === undefined;
+  const profileValidation = userProfile?.profile
+    ? validateProfileForAppointment(userProfile.profile)
+    : { isComplete: false, missingFields: [], missingCriticalFields: [] };
 
   const actions = [
     {
@@ -103,17 +239,20 @@ export function ActionCard({ className }: ActionCardProps) {
     {
       id: "book-appointment",
       label: "Book Appointment",
-      description: "Schedule with available doctors",
+      description: profileValidation.isComplete
+        ? "Schedule with available doctors (requires microphone access)"
+        : "Complete your profile to book appointments",
       icon: Calendar,
-      colorClass:
-        "bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 border-green-200",
+      colorClass: profileValidation.isComplete
+        ? "bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 border-green-200"
+        : "bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-500 border-gray-200",
       onClick: handleAppointmentCall,
-      disabled: false,
+      disabled: false, // Always enabled to show validation messages
     },
     {
       id: "request-prescription",
       label: "Request Prescription",
-      description: "Refill or new prescription request",
+      description: "New prescription request",
       icon: Pill,
       colorClass:
         "bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-800 border-purple-200",
@@ -127,9 +266,7 @@ export function ActionCard({ className }: ActionCardProps) {
       icon: UserPlus,
       colorClass:
         "bg-teal-50 hover:bg-teal-100 text-teal-700 hover:text-teal-800 border-teal-200",
-      onClick: () => {
-        console.log("Update profile clicked");
-      },
+      onClick: handleUpdateProfile,
       disabled: false,
     },
     {
@@ -157,47 +294,81 @@ export function ActionCard({ className }: ActionCardProps) {
   ];
 
   return (
-    <Card className={`border-gray-200 shadow-sm ${className}`}>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-bold text-gray-900 font-heading">
-          Healthcare Services
-        </CardTitle>
-        <CardDescription className="text-sm text-gray-600">
-          Access our AI-powered healthcare services through voice assistance
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {actions.map((action) => {
-          const IconComponent = action.icon;
+    <>
+      <Card className={`border-gray-200 shadow-sm ${className}`}>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-bold text-gray-900 font-heading">
+            Healthcare Services
+          </CardTitle>
+          <CardDescription className="text-sm text-gray-600">
+            Access our AI-powered healthcare services through voice assistance
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {actions.map((action) => {
+            const IconComponent = action.icon;
 
-          return (
-            <Button
-              key={action.id}
-              variant="outline"
-              className={`w-full justify-start h-16 shadow-none ${action.colorClass} flex-col items-start p-4`}
-              onClick={action.onClick}
-              disabled={isLoading || action.disabled}
-            >
-              <div className="flex items-center w-full">
-                <IconComponent className="mr-3 h-5 w-5 flex-shrink-0" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">{action.label}</div>
-                  <div className="text-xs opacity-75 mt-0.5">
-                    {action.description}
-                    {action.id === "complete-intake" &&
-                      !hasPhoneNumber &&
-                      !isLoading && (
-                        <span className="block text-red-500 mt-1">
+            return (
+              <Button
+                key={action.id}
+                variant="outline"
+                className={`w-full justify-start h-16 shadow-none ${action.colorClass} flex-col items-start p-4`}
+                onClick={action.onClick}
+                disabled={action.disabled}
+              >
+                <div className="flex items-center w-full min-w-0">
+                  <IconComponent className="mr-3 h-5 w-5 flex-shrink-0" />
+                  <div className="text-left min-w-0 flex-1">
+                    <div className="font-medium text-sm truncate">
+                      {action.label}
+                    </div>
+                    <div className="text-xs opacity-75 mt-0.5 line-clamp-2">
+                      {action.description}
+                      {action.id === "complete-intake" && !hasPhoneNumber && (
+                        <span className="block text-red-500 mt-1 truncate">
                           Phone number required
                         </span>
                       )}
+                      {action.id === "book-appointment" &&
+                        !profileValidation.isComplete && (
+                          <span className="block text-amber-600 mt-1 truncate">
+                            {profileValidation.missingCriticalFields.length > 0
+                              ? `Missing: ${profileValidation.missingCriticalFields.join(", ")}`
+                              : "Profile needs completion"}
+                          </span>
+                        )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Button>
-          );
-        })}
-      </CardContent>
-    </Card>
+              </Button>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Book Appointment Modal */}
+      {userProfile?.user && userProfile?.profile && (
+        <BookAppointmentModal
+          isOpen={isAppointmentModalOpen}
+          onClose={() => setIsAppointmentModalOpen(false)}
+          userProfile={{
+            user: userProfile.user,
+            profile: userProfile.profile,
+          }}
+        />
+      )}
+
+      {/* Prescription Modal */}
+      {userProfile?.user && userProfile?.profile && (
+        <RequestPrescriptionModal
+          isOpen={isRequestPrescriptionModalOpen}
+          onClose={() => setIsRequestPrescriptionModalOpen(false)}
+          userProfile={{
+            user: userProfile.user,
+            profile: userProfile.profile,
+          }}
+        />
+      )}
+    </>
   );
 }

@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Activity,
   User,
@@ -57,32 +56,9 @@ export function ActiveTicketCard({ className }: ActiveTicketCardProps) {
     );
   }
 
-  if (tickets === undefined) {
-    return (
-      <Card className={`border-gray-200 shadow-sm ${className}`}>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold text-gray-900 font-heading flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span>Active Medical Ticket</span>
-            </div>
-          </CardTitle>
-          <CardDescription className="text-sm text-gray-600">
-            Loading your active ticket information...
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Find the most recent active ticket (in_progress or on_hold)
   const activeTicket = tickets
-    .filter(
+    ?.filter(
       (ticket) => ticket.status === "in_progress" || ticket.status === "on_hold"
     )
     .sort((a, b) => b.createdAt - a.createdAt)[0];
@@ -91,7 +67,7 @@ export function ActiveTicketCard({ className }: ActiveTicketCardProps) {
   const displayTicket =
     activeTicket ||
     tickets
-      .filter((ticket) => ticket.status === "completed")
+      ?.filter((ticket) => ticket.status === "completed")
       .sort((a, b) => b.createdAt - a.createdAt)[0];
 
   const isActive = !!activeTicket;

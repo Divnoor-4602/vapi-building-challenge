@@ -921,3 +921,200 @@ export const debugTicketStatus = query({
     };
   },
 });
+
+// Get the most recent medical ticket for a user by Clerk ID
+export const getMostRecentTicketForUser = query({
+  args: {
+    clerkId: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      // Ticket information
+      _id: v.id("medicalTickets"),
+      _creationTime: v.number(),
+      userId: v.id("users"),
+      profileId: v.id("profiles"),
+      patientId: v.id("patients"),
+      status: medicalTicketStatusValidator,
+      nextSteps: v.optional(medicalTicketNextStepsValidator),
+      notes: v.optional(v.string()),
+      createdAt: v.number(),
+
+      // Patient information
+      patient: v.object({
+        _id: v.id("patients"),
+        _creationTime: v.number(),
+        userId: v.id("users"),
+        profileId: v.id("profiles"),
+        chiefComplaint: v.string(),
+        currentSymptoms: v.array(
+          v.object({
+            symptom: v.string(),
+            severity: v.union(
+              v.literal("mild"),
+              v.literal("moderate"),
+              v.literal("severe")
+            ),
+            duration: v.string(),
+            notes: v.optional(v.string()),
+          })
+        ),
+        recommendedAction: v.optional(
+          v.union(
+            v.literal("schedule_appointment"),
+            v.literal("urgent_care"),
+            v.literal("emergency"),
+            v.literal("prescription_consultation")
+          )
+        ),
+        assignedProviderId: v.optional(v.string()),
+        requiresFollowUp: v.boolean(),
+        followUpNotes: v.optional(v.string()),
+      }),
+
+      // Profile information
+      profile: v.object({
+        _id: v.id("profiles"),
+        _creationTime: v.number(),
+        userId: v.id("users"),
+        firstName: v.string(),
+        lastName: v.string(),
+        dateOfBirth: v.string(),
+        gender: v.optional(
+          v.union(
+            v.literal("male"),
+            v.literal("female"),
+            v.literal("other"),
+            v.literal("prefer_not_to_say")
+          )
+        ),
+        phoneNumber: v.string(),
+        address: v.optional(
+          v.object({
+            street: v.optional(v.string()),
+            city: v.optional(v.string()),
+            state: v.optional(v.string()),
+            zipCode: v.optional(v.string()),
+            country: v.optional(v.string()),
+          })
+        ),
+        communicationPreferences: v.object({
+          email: v.boolean(),
+          sms: v.boolean(),
+          phone: v.boolean(),
+        }),
+        emergencyContact: v.optional(
+          v.object({
+            name: v.string(),
+            relationship: v.string(),
+            phoneNumber: v.string(),
+          })
+        ),
+        medicalHistory: v.optional(
+          v.object({
+            allergies: v.array(v.string()),
+            currentMedications: v.array(
+              v.object({
+                name: v.string(),
+                dosage: v.string(),
+                frequency: v.string(),
+              })
+            ),
+            chronicConditions: v.array(v.string()),
+            previousSurgeries: v.array(
+              v.object({
+                procedure: v.string(),
+                year: v.string(),
+              })
+            ),
+            familyHistory: v.optional(v.array(v.string())),
+          })
+        ),
+        insurance: v.optional(
+          v.object({
+            provider: v.string(),
+            policyNumber: v.string(),
+            groupNumber: v.optional(v.string()),
+            subscriberName: v.string(),
+            relationshipToSubscriber: v.string(),
+          })
+        ),
+        consents: v.optional(
+          v.object({
+            treatmentConsent: v.boolean(),
+            dataProcessingConsent: v.boolean(),
+            marketingConsent: v.boolean(),
+            consentTimestamp: v.number(),
+          })
+        ),
+        isProfileComplete: v.boolean(),
+      }),
+
+      // Prescriptions (if any)
+      prescriptions: v.array(
+        v.object({
+          _id: v.id("prescriptions"),
+          _creationTime: v.number(),
+          patientId: v.id("patients"),
+          ticketId: v.id("medicalTickets"),
+          prescriptionDetails: v.object({
+            medication: v.string(),
+            dosage: v.string(),
+            frequency: v.string(),
+            instructions: v.string(),
+          }),
+          notes: v.optional(v.string()),
+        })
+      ),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // First, find the user by Clerk ID
+    const user = await ctx.db
+      .query("users")
+      .withIndex("byClerkId", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    if (!user) {
+      // Return null if user not found
+      return null;
+    }
+
+    // Get the most recent medical ticket for the user
+    const mostRecentTicket = await ctx.db
+      .query("medicalTickets")
+      .withIndex("byUserId", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .first();
+
+    if (!mostRecentTicket) {
+      return null;
+    }
+
+    // Get patient data
+    const patient = await ctx.db.get(mostRecentTicket.patientId);
+    if (!patient) {
+      throw new Error(`Patient not found for ticket ${mostRecentTicket._id}`);
+    }
+
+    // Get profile data
+    const profile = await ctx.db.get(mostRecentTicket.profileId);
+    if (!profile) {
+      throw new Error(`Profile not found for ticket ${mostRecentTicket._id}`);
+    }
+
+    // Get prescriptions for this ticket
+    const prescriptions = await ctx.db
+      .query("prescriptions")
+      .withIndex("byTicketId", (q) => q.eq("ticketId", mostRecentTicket._id))
+      .collect();
+
+    return {
+      ...mostRecentTicket,
+      patient,
+      profile,
+      prescriptions,
+    };
+  },
+});

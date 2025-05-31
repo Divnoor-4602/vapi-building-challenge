@@ -9,15 +9,6 @@ export function ProfileStatusBadge() {
   // Get the profile completion status from Convex
   const isProfileComplete = useQuery(api.profiles.getProfileCompletionStatus);
 
-  // Show loading state while query is pending
-  if (isProfileComplete === undefined) {
-    return (
-      <Badge variant="secondary" className="animate-pulse">
-        Loading...
-      </Badge>
-    );
-  }
-
   return (
     <Badge
       variant={isProfileComplete ? "default" : "destructive"}

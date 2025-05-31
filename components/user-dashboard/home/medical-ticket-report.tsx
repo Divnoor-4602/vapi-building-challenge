@@ -18,72 +18,9 @@ import {
   Calendar,
   Stethoscope,
 } from "lucide-react";
-
-// Types based on the schema
-type Symptom = {
-  symptom: string;
-  severity: "mild" | "moderate" | "severe";
-  duration: string;
-  notes?: string;
-};
-
-type MedicalTicket = {
-  id: string;
-  status: "cancelled" | "completed" | "in_progress" | "on_hold";
-  nextSteps?: "vapi_appointment" | "vapi_prescription";
-  notes?: string;
-  createdAt: string;
-  // Patient visit details
-  chiefComplaint: string;
-  currentSymptoms: Symptom[];
-  recommendedAction?:
-    | "schedule_appointment"
-    | "urgent_care"
-    | "emergency"
-    | "prescription_consultation";
-  assignedProviderId?: string;
-  requiresFollowUp: boolean;
-  followUpNotes?: string;
-  // Additional details for display
-  patientName: string;
-  providerName?: string;
-};
-
-// Sample medical ticket data
-const sampleMedicalTicket: MedicalTicket = {
-  id: "ticket-001",
-  status: "completed",
-  nextSteps: "vapi_prescription",
-  notes:
-    "Patient responded well to initial consultation. Prescribed antibiotics for bacterial infection.",
-  createdAt: "2024-01-15",
-  chiefComplaint: "Persistent cough and fever for 3 days",
-  currentSymptoms: [
-    {
-      symptom: "Dry cough",
-      severity: "moderate",
-      duration: "3 days",
-      notes: "Worse at night",
-    },
-    {
-      symptom: "Fever",
-      severity: "mild",
-      duration: "2 days",
-      notes: "Temperature around 100.5°F",
-    },
-    {
-      symptom: "Fatigue",
-      severity: "moderate",
-      duration: "3 days",
-    },
-  ],
-  recommendedAction: "prescription_consultation",
-  assignedProviderId: "dr-wilson-001",
-  requiresFollowUp: true,
-  followUpNotes: "Schedule follow-up in 1 week to assess improvement",
-  patientName: "John Doe",
-  providerName: "Dr. Sarah Wilson",
-};
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
 
 interface MedicalTicketReportProps {
   className?: string;
@@ -94,6 +31,13 @@ const statusVariants = {
   in_progress: "bg-blue-100 text-blue-800 hover:bg-blue-200",
   on_hold: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
   cancelled: "bg-red-100 text-red-800 hover:bg-red-200",
+};
+
+const statusLabels = {
+  completed: "Completed",
+  in_progress: "In Progress",
+  on_hold: "On Hold",
+  cancelled: "Cancelled",
 };
 
 const severityVariants = {
@@ -109,8 +53,22 @@ const actionVariants = {
   prescription_consultation: "bg-purple-100 text-purple-800",
 };
 
+const nextStepsLabels = {
+  vapi_appointment: "Schedule Appointment",
+  vapi_prescription: "Prescription Consultation",
+};
+
 export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
-  if (!sampleMedicalTicket) {
+  const { user } = useUser();
+
+  // Fetch the most recent medical ticket for the current user
+  const recentTicket = useQuery(
+    api.medicalTickets.getMostRecentTicketForUser,
+    user?.id ? { clerkId: user.id } : "skip"
+  );
+
+  // No tickets found
+  if (!recentTicket) {
     return (
       <Card className={`border-gray-200 shadow-sm ${className}`}>
         <CardHeader className="pb-4">
@@ -127,7 +85,10 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
         <CardContent>
           <div className="text-center py-8">
             <Stethoscope className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No recent medical visits found</p>
+            <p className="text-gray-500 mb-2">No recent medical visits found</p>
+            <p className="text-sm text-gray-400">
+              Your medical consultation history will appear here
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -155,21 +116,18 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
               <Calendar className="h-4 w-4 text-blue-600" />
               <span className="text-sm font-medium text-blue-900">
                 Visit Date:{" "}
-                {new Date(sampleMedicalTicket.createdAt).toLocaleDateString(
-                  "en-US",
-                  {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  }
-                )}
+                {new Date(recentTicket.createdAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </span>
             </div>
             <Badge
               variant="secondary"
-              className={statusVariants[sampleMedicalTicket.status]}
+              className={statusVariants[recentTicket.status]}
             >
-              {sampleMedicalTicket.status.replace("_", " ")}
+              {statusLabels[recentTicket.status]}
             </Badge>
           </div>
 
@@ -177,7 +135,8 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
             <div className="flex items-center space-x-2">
               <User className="h-4 w-4 text-blue-600" />
               <span className="text-sm text-blue-800">
-                Provider: {sampleMedicalTicket.providerName || "Not assigned"}
+                Patient: {recentTicket.profile.firstName}{" "}
+                {recentTicket.profile.lastName}
               </span>
             </div>
             <div className="flex items-center space-x-2">
@@ -187,7 +146,7 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
                   Chief Complaint:
                 </span>
                 <p className="text-sm text-blue-800">
-                  {sampleMedicalTicket.chiefComplaint}
+                  {recentTicket.patient.chiefComplaint}
                 </p>
               </div>
             </div>
@@ -195,59 +154,61 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
         </div>
 
         {/* Symptoms */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">
-            Reported Symptoms
-          </h3>
-          <div className="space-y-2">
-            {sampleMedicalTicket.currentSymptoms.map((symptom, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      {symptom.symptom}
-                    </span>
-                    <Badge
-                      variant="secondary"
-                      className={severityVariants[symptom.severity]}
-                    >
-                      {symptom.severity}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Duration: {symptom.duration}
-                  </p>
-                  {symptom.notes && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {symptom.notes}
+        {recentTicket.patient.currentSymptoms.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              Reported Symptoms
+            </h3>
+            <div className="space-y-2">
+              {recentTicket.patient.currentSymptoms.map((symptom, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-900">
+                        {symptom.symptom}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className={severityVariants[symptom.severity]}
+                      >
+                        {symptom.severity}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Duration: {symptom.duration}
                     </p>
-                  )}
+                    {symptom.notes && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {symptom.notes}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Recommended Action */}
-        {sampleMedicalTicket.recommendedAction && (
+        {recentTicket.patient.recommendedAction && (
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-2">
               Recommended Action
             </h3>
             <Badge
               variant="secondary"
-              className={actionVariants[sampleMedicalTicket.recommendedAction]}
+              className={actionVariants[recentTicket.patient.recommendedAction]}
             >
-              {sampleMedicalTicket.recommendedAction.replace("_", " ")}
+              {recentTicket.patient.recommendedAction.replace("_", " ")}
             </Badge>
           </div>
         )}
 
         {/* Follow-up */}
-        {sampleMedicalTicket.requiresFollowUp && (
+        {recentTicket.patient.requiresFollowUp && (
           <div className="bg-orange-50 p-3 rounded-md">
             <div className="flex items-start space-x-2">
               <Clock className="h-4 w-4 text-orange-600 mt-0.5" />
@@ -255,9 +216,9 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
                 <p className="text-sm font-medium text-orange-900">
                   Follow-up Required
                 </p>
-                {sampleMedicalTicket.followUpNotes && (
+                {recentTicket.patient.followUpNotes && (
                   <p className="text-sm text-orange-800 mt-1">
-                    {sampleMedicalTicket.followUpNotes}
+                    {recentTicket.patient.followUpNotes}
                   </p>
                 )}
               </div>
@@ -266,16 +227,14 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
         )}
 
         {/* Next Steps */}
-        {sampleMedicalTicket.nextSteps && (
+        {recentTicket.nextSteps && (
           <div className="bg-green-50 p-3 rounded-md">
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <div>
                 <p className="text-sm font-medium text-green-900">Next Steps</p>
                 <p className="text-sm text-green-800">
-                  {sampleMedicalTicket.nextSteps === "vapi_appointment"
-                    ? "Schedule Appointment"
-                    : "Prescription Consultation"}
+                  {nextStepsLabels[recentTicket.nextSteps]}
                 </p>
               </div>
             </div>
@@ -283,15 +242,40 @@ export function MedicalTicketReport({ className }: MedicalTicketReportProps) {
         )}
 
         {/* Provider Notes */}
-        {sampleMedicalTicket.notes && (
+        {recentTicket.notes && (
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-2">
               Provider Notes
             </h3>
             <div className="bg-gray-50 p-3 rounded-md">
-              <p className="text-sm text-gray-700">
-                {sampleMedicalTicket.notes}
-              </p>
+              <p className="text-sm text-gray-700">{recentTicket.notes}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Prescriptions (if any) */}
+        {recentTicket.prescriptions.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              Prescriptions from this visit
+            </h3>
+            <div className="space-y-2">
+              {recentTicket.prescriptions.map((prescription, index) => (
+                <div key={index} className="bg-green-50 p-3 rounded-md">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="text-sm font-medium text-green-900">
+                      {prescription.prescriptionDetails.medication}
+                    </span>
+                    <span className="text-xs text-green-700">
+                      {prescription.prescriptionDetails.dosage}
+                    </span>
+                  </div>
+                  <p className="text-xs text-green-800">
+                    {prescription.prescriptionDetails.frequency} -{" "}
+                    {prescription.prescriptionDetails.instructions}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         )}

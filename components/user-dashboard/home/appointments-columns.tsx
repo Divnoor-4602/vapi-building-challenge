@@ -14,50 +14,71 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export type Appointment = {
-  id: string;
-  patientName: string;
-  doctorName: string;
-  date: string;
-  time: string;
-  status: "upcoming" | "completed" | "cancelled" | "rescheduled";
-  type: "consultation" | "follow-up" | "emergency" | "routine";
-  department: string;
+  _id: string;
+  _creationTime: number;
+  summary: string;
+  startDateTime: string;
+  endDateTime: string;
+  timeZone: string;
+  status: "cancelled" | "completed" | "confirmed";
+  notes?: string;
+  createdAt: number;
+  doctor: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  patient: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  profile: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
 };
 
 const statusVariants = {
-  upcoming: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+  upcoming: "bg-blue-100 text-blue-800 hover:bg-blue-200", // mapped from "confirmed"
   completed: "bg-green-100 text-green-800 hover:bg-green-200",
   cancelled: "bg-red-100 text-red-800 hover:bg-red-200",
-  rescheduled: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
 };
 
-const typeVariants = {
-  consultation: "bg-purple-100 text-purple-800",
-  "follow-up": "bg-orange-100 text-orange-800",
-  emergency: "bg-red-100 text-red-800",
-  routine: "bg-gray-100 text-gray-800",
+const statusLabels = {
+  confirmed: "Upcoming",
+  completed: "Completed",
+  cancelled: "Cancelled",
 };
 
 export const appointmentsColumns: ColumnDef<Appointment>[] = [
   {
-    accessorKey: "patientName",
+    accessorKey: "profile",
     header: "Patient",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("patientName")}</div>
-    ),
+    cell: ({ row }) => {
+      const profile = row.getValue("profile") as Appointment["profile"];
+      return (
+        <div className="font-medium">
+          {profile.firstName} {profile.lastName}
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "doctorName",
+    accessorKey: "doctor",
     header: "Doctor",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600">{row.getValue("doctorName")}</div>
-    ),
+    cell: ({ row }) => {
+      const doctor = row.getValue("doctor") as Appointment["doctor"];
+      return <div className="text-sm text-gray-600">{doctor.name}</div>;
+    },
   },
   {
-    accessorKey: "date",
+    accessorKey: "startDateTime",
     header: "Date",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("date"));
+      const startDateTime = row.getValue("startDateTime") as string;
+      const date = new Date(startDateTime);
       return (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-gray-400" />
@@ -73,45 +94,47 @@ export const appointmentsColumns: ColumnDef<Appointment>[] = [
     },
   },
   {
-    accessorKey: "time",
+    accessorKey: "startDateTime",
     header: "Time",
-    cell: ({ row }) => (
-      <div className="flex items-center space-x-2">
-        <Clock className="h-4 w-4 text-gray-400" />
-        <span className="text-sm">{row.getValue("time")}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
+    id: "time",
     cell: ({ row }) => {
-      const type = row.getValue("type") as keyof typeof typeVariants;
+      const startDateTime = row.getValue("startDateTime") as string;
+      const date = new Date(startDateTime);
       return (
-        <Badge variant="secondary" className={typeVariants[type]}>
-          {type}
-        </Badge>
+        <div className="flex items-center space-x-2">
+          <Clock className="h-4 w-4 text-gray-400" />
+          <span className="text-sm">
+            {date.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </span>
+        </div>
       );
     },
+  },
+  {
+    accessorKey: "summary",
+    header: "Appointment",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600 max-w-[200px] truncate">
+        {row.getValue("summary")}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as keyof typeof statusVariants;
+      const status = row.getValue("status") as keyof typeof statusLabels;
+      const displayStatus = status === "confirmed" ? "upcoming" : status;
       return (
-        <Badge variant="secondary" className={statusVariants[status]}>
-          {status}
+        <Badge variant="secondary" className={statusVariants[displayStatus]}>
+          {statusLabels[status]}
         </Badge>
       );
     },
-  },
-  {
-    accessorKey: "department",
-    header: "Department",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600">{row.getValue("department")}</div>
-    ),
   },
   {
     id: "actions",
@@ -130,16 +153,20 @@ export const appointmentsColumns: ColumnDef<Appointment>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(appointment.id)}
+              onClick={() => navigator.clipboard.writeText(appointment._id)}
             >
               Copy appointment ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>Reschedule</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
-              Cancel appointment
-            </DropdownMenuItem>
+            {appointment.status === "confirmed" && (
+              <>
+                <DropdownMenuItem>Reschedule</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600">
+                  Cancel appointment
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

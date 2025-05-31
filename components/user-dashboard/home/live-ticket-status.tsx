@@ -21,15 +21,6 @@ export function LiveTicketStatus({ className }: LiveTicketStatusProps) {
     userData?._id ? { userId: userData._id as Id<"users"> } : "skip"
   );
 
-  // Loading state
-  if (userData === undefined || activeTickets === undefined) {
-    return (
-      <Badge variant="secondary" className={`animate-pulse ${className}`}>
-        Loading...
-      </Badge>
-    );
-  }
-
   // Check if there are any active tickets
   const hasActiveTickets = activeTickets && activeTickets.length > 0;
   const activeTicketCount = activeTickets?.length || 0;
@@ -37,11 +28,11 @@ export function LiveTicketStatus({ className }: LiveTicketStatusProps) {
   return (
     <Badge
       variant={hasActiveTickets ? "secondary" : "outline"}
-      className={
+      className={`${
         hasActiveTickets
           ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200 flex items-center gap-1"
           : "bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200 flex items-center gap-1"
-      }
+      } ${className}`}
     >
       {hasActiveTickets ? (
         <>

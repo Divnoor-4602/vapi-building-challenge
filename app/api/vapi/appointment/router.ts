@@ -1,13 +1,12 @@
-// Prescription Router - handles routing for prescription operations
 import { createVapiErrorResponse } from "@/lib/api/utils";
-import { handleGetPrescription, handleCreatePrescription } from "./handlers";
+import { handleCreateAppointment, handleGetDoctor } from "./handlers";
 
-export const routePrescriptionFunction = async (
+export const routeAppointmentFunction = async (
   functionName: string,
   args: Record<string, unknown>,
   toolCallId: string
 ) => {
-  const logPrefix = `[PRESCRIPTION_ROUTER][${toolCallId}]`;
+  const logPrefix = `[APPOINTMENT_ROUTER][${toolCallId}]`;
 
   console.log(`${logPrefix} 🚀 Starting function routing`);
   console.log(`${logPrefix} 🎯 Function name:`, functionName);
@@ -15,13 +14,13 @@ export const routePrescriptionFunction = async (
   console.log(`${logPrefix} 🔑 Tool call ID:`, toolCallId);
 
   switch (functionName) {
-    case "getPrescription":
-      console.log(`${logPrefix} ✅ Routing to: handleGetPrescription`);
-      return await handleGetPrescription(args, toolCallId);
+    case "createAppointment":
+      console.log(`${logPrefix} ✅ Routing to: handleCreateAppointment`);
+      return await handleCreateAppointment(args, toolCallId);
 
-    case "createPrescription":
-      console.log(`${logPrefix} ✅ Routing to: handleCreatePrescription`);
-      return await handleCreatePrescription(args, toolCallId);
+    case "getDoctor":
+      console.log(`${logPrefix} ✅ Routing to: handleGetDoctor`);
+      return await handleGetDoctor(args, toolCallId);
 
     default:
       console.log(
@@ -37,4 +36,9 @@ export const routePrescriptionFunction = async (
       );
       return errorResponse;
   }
+};
+
+export const functionHandlers = {
+  createAppointment: handleCreateAppointment,
+  getDoctor: handleGetDoctor,
 };

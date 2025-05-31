@@ -259,7 +259,8 @@ export const handleUpdatePatientProfileAction = async (
 
     // Create a clean response to avoid conversation cutting
     const successResponse = createVapiResponse(toolCallId, {
-      ...updatedProfile,
+      user: updatedProfile.user,
+      profile: updatedProfile.profile,
       status: "updated",
       message: "Patient profile updated successfully",
     });
