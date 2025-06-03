@@ -15,8 +15,8 @@ import {
   UserPlus,
   Calendar,
   Pill,
-  FileText,
   Stethoscope,
+  ChartLine,
   HeartHandshake,
 } from "lucide-react";
 import { createMedicalFlowCall } from "@/lib/actions/vapi.action";
@@ -24,6 +24,7 @@ import { api } from "@/convex/_generated/api";
 import {
   BookAppointmentModal,
   RequestPrescriptionModal,
+  UpdateProfileModal,
 } from "@/components/vapi";
 import {
   validateProfileForAppointment,
@@ -41,6 +42,8 @@ export function ActionCard({ className }: ActionCardProps) {
   // Modal state
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [isRequestPrescriptionModalOpen, setIsRequestPrescriptionModalOpen] =
+    useState(false);
+  const [isUpdateProfileModalOpen, setIsUpdateProfileModalOpen] =
     useState(false);
 
   // Handle the medical flow call
@@ -205,7 +208,21 @@ export function ActionCard({ className }: ActionCardProps) {
 
   // handle update profile
   const handleUpdateProfile = async () => {
-    console.log("Update profile clicked");
+    if (!userProfile?.user || !userProfile?.profile) {
+      toast.error("Please complete your profile first", {
+        description: "A profile is required for updates",
+        richColors: true,
+      });
+      return;
+    }
+
+    // Open update profile modal
+    setIsUpdateProfileModalOpen(true);
+  };
+
+  // provide information about the user's medical history, previous visits, prescriptions and any other relevant information to the user
+  const handleMedicalAnalysis = async () => {
+    console.log("Medical analysis clicked");
   };
 
   const handleCustomerCareCall = async () => {
@@ -270,17 +287,16 @@ export function ActionCard({ className }: ActionCardProps) {
       disabled: false,
     },
     {
-      id: "view-records",
-      label: "View Medical Records",
-      description: "Access your health history",
-      icon: FileText,
+      id: "medical-analysis",
+      label: "Medical Analysis",
+      description: "Feeling confused? Let's talk about your health",
+      icon: ChartLine,
       colorClass:
         "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-800 border-indigo-200",
-      onClick: () => {
-        console.log("View medical records clicked");
-      },
+      onClick: handleMedicalAnalysis,
       disabled: false,
     },
+
     {
       id: "customer-care",
       label: "Customer Support",
@@ -363,6 +379,18 @@ export function ActionCard({ className }: ActionCardProps) {
         <RequestPrescriptionModal
           isOpen={isRequestPrescriptionModalOpen}
           onClose={() => setIsRequestPrescriptionModalOpen(false)}
+          userProfile={{
+            user: userProfile.user,
+            profile: userProfile.profile,
+          }}
+        />
+      )}
+
+      {/* Update Profile Modal */}
+      {userProfile?.user && userProfile?.profile && (
+        <UpdateProfileModal
+          isOpen={isUpdateProfileModalOpen}
+          onClose={() => setIsUpdateProfileModalOpen(false)}
           userProfile={{
             user: userProfile.user,
             profile: userProfile.profile,

@@ -1,6 +1,6 @@
 // Base modal and types
 export { BaseVapiModal } from "./base-vapi-modal";
-export type { CallState, VapiMessage } from "./base-vapi-modal";
+export type { VapiMessage } from "./base-vapi-modal";
 
 // Modular UI components
 export { CallControls } from "./call-controls";
@@ -12,3 +12,4 @@ export { PatientInfo } from "./patient-info";
 // Specific modal implementations
 export { BookAppointmentModal } from "./book-appointment-modal";
 export { RequestPrescriptionModal } from "./request-prescription-modal";
+export { UpdateProfileModal } from "./update-profile-modal";
